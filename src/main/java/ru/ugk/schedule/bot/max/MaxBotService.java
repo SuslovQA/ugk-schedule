@@ -2,6 +2,7 @@ package ru.ugk.schedule.bot.max;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -12,21 +13,28 @@ import java.util.*;
 
 @Service
 public class MaxBotService {
-    private final RestClient http=RestClient.create(); private final CatalogService catalog; private final UserPreferenceService prefs;
-    private final String token; private final String botName; private Long marker;
-    public MaxBotService(CatalogService catalog,UserPreferenceService prefs,@Value("${app.max.token:}") String token,@Value("${app.max.bot-name:}") String botName){this.catalog=catalog;this.prefs=prefs;this.token=token;this.botName=botName;}
+    private final RestClient http; private final CatalogService catalog; private final UserPreferenceService prefs;
+    private final String token; private BotIdentity botIdentity; private Long marker;
+    public MaxBotService(CatalogService catalog,UserPreferenceService prefs,@Value("${app.max.token:}") String token,@Qualifier("maxRestClient") RestClient http){this.catalog=catalog;this.prefs=prefs;this.token=token;this.http=http;}
 
     @Scheduled(fixedDelayString="${app.max.poll-delay-ms:2000}") public void poll(){
         if(token.isBlank()) return;
         try{
             String url="https://platform-api2.max.ru/updates?timeout=1&limit=100"+(marker==null?"":"&marker="+marker);
             JsonNode root=http.get().uri(url).header("Authorization",token).retrieve().body(JsonNode.class); if(root==null)return;
-            if(root.hasNonNull("marker")) marker=root.path("marker").asLong(); for(JsonNode u:root.path("updates"))handle(u);
+            if(root.hasNonNull("marker")) marker=root.path("marker").asLong();
+            for(JsonNode u:root.path("updates")){
+                try { handle(u); }
+                catch(Exception e){System.err.println("MAX update "+u.path("update_type").asText()+": "+e.getMessage());}
+            }
         }catch(Exception e){System.err.println("MAX polling: "+e.getMessage());}
     }
     private void handle(JsonNode u){
         String type=u.path("update_type").asText();
-        if("message_created".equals(type)){
+        if("bot_started".equals(type)){
+            String userId=u.path("user").path("user_id").asText("");
+            if(!userId.isBlank()) showCurrentOrLevels(userId);
+        } else if("message_created".equals(type)){
             JsonNode m=u.path("message"); String userId=firstText(m.path("sender").path("user_id"),u.path("user").path("user_id"));
             String text=m.path("body").path("text").asText(""); if(text.equalsIgnoreCase("/start")||text.equalsIgnoreCase("start")||text.equalsIgnoreCase("начать")) showCurrentOrLevels(userId);
         } else if("message_callback".equals(type)){
@@ -46,11 +54,24 @@ public class MaxBotService {
     private void showCourses(String userId,Long levelId){send(userId,"Выберите курс",buttons(catalog.activeCourses(levelId).stream().map(x->new Btn(x.getName(),"C:"+x.getId())).toList()));}
     private void showGroups(String userId,Long courseId){send(userId,"Выберите группу / направление",buttons(catalog.activeGroups(courseId).stream().map(x->new Btn(x.getName(),"G:"+x.getId())).toList()));}
     private void showMenu(String userId){
-        UserPreference p=prefs.find(MessengerType.MAX,userId).orElseThrow(); String deepLink="https://max.ru/"+botName+"?startapp=g"+p.getGroup().getId();
-        List<List<Map<String,Object>>> rows=new ArrayList<>(); rows.add(List.of(Map.of("type","open_app","text","Показать расписание","web_app",deepLink))); rows.add(List.of(Map.of("type","callback","text","Сброс настроек","payload","RESET")));
+        UserPreference p=prefs.find(MessengerType.MAX,userId).orElseThrow();
+        BotIdentity bot=currentBot();
+        List<List<Map<String,Object>>> rows=new ArrayList<>(); rows.add(List.of(Map.of("type","open_app","text","Показать расписание","web_app",bot.username(),"contact_id",bot.id(),"payload","g"+p.getGroup().getId()))); rows.add(List.of(Map.of("type","callback","text","Сброс настроек","payload","RESET")));
         send(userId,"Настройки сохранены: "+p.getEducationLevel().getName()+", "+p.getCourse().getName()+", "+p.getGroup().getName(),rows);
     }
     private record Btn(String text,String data){}
+    private record BotIdentity(long id, String username){}
+    private BotIdentity currentBot(){
+        if(botIdentity == null){
+            JsonNode me=http.get().uri("https://platform-api2.max.ru/me").header("Authorization",token).retrieve().body(JsonNode.class);
+            if(me == null || !me.path("user_id").isIntegralNumber() || !me.path("user_id").canConvertToLong() || !me.path("is_bot").asBoolean())
+                throw new IllegalStateException("MAX /me did not return a valid bot identity");
+            String username=me.path("username").asText("").trim();
+            if(username.isBlank()) throw new IllegalStateException("MAX /me did not return a bot username required for open_app");
+            botIdentity=new BotIdentity(me.path("user_id").longValue(),username);
+        }
+        return botIdentity;
+    }
     private List<List<Map<String,Object>>> buttons(List<Btn> bs){return bs.stream().map(b->List.<Map<String,Object>>of(Map.of("type","callback","text",b.text(),"payload",b.data()))).toList();}
     private void send(String userId,String text,List<List<Map<String,Object>>> rows){
         Map<String,Object> body=Map.of("text",text,"attachments",List.of(Map.of("type","inline_keyboard","payload",Map.of("buttons",rows))));

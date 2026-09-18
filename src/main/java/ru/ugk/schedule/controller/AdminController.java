@@ -5,6 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.ugk.schedule.service.CatalogService;
+import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
@@ -30,6 +31,26 @@ public class AdminController {
         try{catalog.saveCourse(id,levelId,number,name,active);ra.addFlashAttribute("message","Курс сохранён");}catch(Exception e){ra.addFlashAttribute("error",e.getMessage());} return "redirect:/admin";
     }
     @PostMapping("/courses/{id}/delete") public String deleteCourse(@PathVariable Long id,RedirectAttributes ra){try{catalog.deleteCourse(id);}catch(Exception e){ra.addFlashAttribute("error","Нельзя удалить: есть связанные данные");}return "redirect:/admin";}
+    @PostMapping("/courses/bulk")
+    public String createCourses(@RequestParam(required=false) List<Long> levelIds,
+                                @RequestParam Integer number, @RequestParam(defaultValue="") String name,
+                                @RequestParam(defaultValue="false") boolean active, RedirectAttributes ra) {
+        try {
+            var result = catalog.createCourses(levelIds, number, name, active);
+            ra.addFlashAttribute("message", "Добавлено курсов: " + result.created() + ". Уже существовали: " + result.skipped());
+        } catch (IllegalArgumentException e) { ra.addFlashAttribute("error", e.getMessage()); }
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/groups/bulk")
+    public String createGroups(@RequestParam(required=false) List<Long> courseIds, @RequestParam String name,
+                               @RequestParam(defaultValue="false") boolean active, RedirectAttributes ra) {
+        try {
+            var result = catalog.createGroups(courseIds, name, active);
+            ra.addFlashAttribute("message", "Добавлено групп: " + result.created() + ". Уже существовали: " + result.skipped());
+        } catch (IllegalArgumentException e) { ra.addFlashAttribute("error", e.getMessage()); }
+        return "redirect:/admin";
+    }
     @PostMapping("/groups") public String saveGroup(@RequestParam(required=false) Long id,@RequestParam Long courseId,@RequestParam String name,
                                                      @RequestParam(defaultValue="false") boolean active,RedirectAttributes ra){
         try{catalog.saveGroup(id,courseId,name,active);ra.addFlashAttribute("message","Группа сохранена");}catch(Exception e){ra.addFlashAttribute("error",e.getMessage());}return "redirect:/admin";

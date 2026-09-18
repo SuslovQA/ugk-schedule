@@ -12,14 +12,15 @@ import java.util.*;
 
 @Service
 public class TelegramBotService {
-    private final RestClient http = RestClient.create();
+    private final RestClient http;
     private final CatalogService catalog; private final UserPreferenceService prefs;
     private final String token; private final String miniAppUrl; private long offset = 0;
 
     public TelegramBotService(CatalogService catalog, UserPreferenceService prefs,
                               @Value("${app.telegram.token:}") String token,
-                              @Value("${app.miniapp.url:https://example.com/miniapp/schedule}") String miniAppUrl){
+                              @Value("${app.miniapp.url:}") String miniAppUrl, RestClient.Builder builder){
         this.catalog=catalog; this.prefs=prefs; this.token=token; this.miniAppUrl=miniAppUrl;
+        this.http=builder.build();
     }
 
     @Scheduled(fixedDelayString = "${app.telegram.poll-delay-ms:1500}")
@@ -58,9 +59,12 @@ public class TelegramBotService {
     private void showMenu(long chatId,String userId){
         UserPreference p=prefs.find(MessengerType.TELEGRAM,userId).orElseThrow(); Long gid=p.getGroup().getId();
         List<List<Map<String,Object>>> rows=new ArrayList<>();
-        rows.add(List.of(Map.of("text","Показать расписание","web_app",Map.of("url",miniAppUrl+"?groupId="+gid))));
+        var link = MiniAppLink.forGroup(miniAppUrl, gid);
+        link.ifPresent(url -> rows.add(List.of(Map.of("text","Показать расписание","web_app",Map.of("url",url)))));
         rows.add(List.of(Map.of("text","Сброс настроек","callback_data","RESET")));
-        send(chatId,"Настройки сохранены: "+p.getEducationLevel().getName()+", "+p.getCourse().getName()+", "+p.getGroup().getName(),rows);
+        String message = "Настройки сохранены: "+p.getEducationLevel().getName()+", "+p.getCourse().getName()+", "+p.getGroup().getName();
+        if (link.isEmpty()) message += "\nРасписание ещё не опубликовано: администратор должен настроить HTTPS-адрес мини-приложения.";
+        send(chatId,message,rows);
     }
     private record Btn(String text,String data){}
     private List<List<Map<String,Object>>> callbackRows(List<Btn> buttons){ return buttons.stream().map(b->List.<Map<String,Object>>of(Map.of("text",b.text(),"callback_data",b.data()))).toList(); }

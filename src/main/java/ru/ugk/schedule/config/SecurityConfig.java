@@ -2,6 +2,7 @@ package ru.ugk.schedule.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,6 +13,17 @@ import ru.ugk.schedule.repository.AdminUserRepository;
 
 @Configuration
 public class SecurityConfig {
+    @Bean
+    @Order(1)
+    SecurityFilterChain miniAppSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/miniapp/**")
+                .authorizeHttpRequests(a -> a.anyRequest().permitAll())
+                .headers(h -> h.frameOptions(f -> f.disable())
+                        .contentSecurityPolicy(c -> c.policyDirectives(
+                                "frame-ancestors 'self' https://max.ru https://*.max.ru https://web.telegram.org https://*.telegram.org")));
+        return http.build();
+    }
+
     @Bean PasswordEncoder passwordEncoder(){ return new BCryptPasswordEncoder(); }
 
     @Bean UserDetailsService userDetailsService(AdminUserRepository repo){
