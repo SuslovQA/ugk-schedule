@@ -121,8 +121,7 @@ public class MaxBotService {
         UserPreference p = prefs.find(MessengerType.MAX, userId).orElseThrow();
         BotIdentity bot = currentBot();
         List<List<Map<String, Object>>> rows = new ArrayList<>();
-        rows.add(List.of(Map.of("type", "link", "text", "Показать расписание", "url",
-                "https://max.ru/" + bot.username() + "?startapp=g" + p.getGroup().getId())));
+        rows.add(List.of(Map.of("type", "open_app", "text", "Показать расписание", "web_app", bot.username(), "contact_id", bot.id(), "payload", "g" + p.getGroup().getId())));
         rows.add(List.of(Map.of("type", "callback", "text", "Сброс настроек", "payload", "RESET")));
         send(userId, "Настройки сохранены: " + p.getEducationLevel().getName() + ", " + p.getCourse().getName() + ", " + p.getGroup().getName(), rows);
     }

@@ -27,6 +27,12 @@ public class UserPreferenceService {
         return prefs.findByMessengerAndExternalUserId(m, userId);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Long> selectedGroupId(MessengerType m, String userId) {
+        return prefs.findByMessengerAndExternalUserId(m, userId)
+                .map(UserPreference::getGroup).map(StudyGroup::getId);
+    }
+
     public UserPreference ensure(MessengerType m, String userId) {
         return prefs.findByMessengerAndExternalUserId(m, userId).orElseGet(() -> {
             UserPreference p = new UserPreference();

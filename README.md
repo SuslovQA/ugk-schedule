@@ -72,6 +72,15 @@ Restart the application after changing `.env` or environment variables.
 
 Bot flow: level -> course -> group -> `Показать расписание` / `Сброс настроек`. The choice is stored in PostgreSQL.
 
+The built-in Telegram menu / Main Mini App button can use the same HTTPS URL
+without `groupId`. Configure it in BotFather. On launch, the page reads Telegram
+initData (from `tgWebAppData` or an existing Telegram WebApp SDK) and requests
+`/api/public/telegram/group`. The server verifies the signature with
+`TELEGRAM_BOT_TOKEN` and a one-hour timestamp limit, then loads the saved Telegram
+group. If none is selected, the page asks the user to configure it with `/start`.
+MAX and Telegram preferences and bot tokens are kept separate.
+See [Telegram validation](https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app).
+
 ## 5. MAX
 
 Set:
@@ -83,12 +92,15 @@ MAX_BOT_TOKEN=...
 In MAX Partner Platform bind the HTTPS Mini App URL to the bot. The project uses `https://platform-api2.max.ru` and long polling for local development. For production, replace polling with a webhook subscription.
 
 Enter the current `MINIAPP_URL` from `.env` in the MAX Partner Platform.
-The MAX schedule button resolves the current bot identity using `/me`, caches it,
-and opens `https://max.ru/<username>?startapp=g<groupId>` to pass the selected group.
+The MAX `open_app` schedule button resolves the current bot identity using `/me`,
+caches it, and passes the selected group as `payload=g<groupId>`.
 `MAX_BOT_NAME` is no longer needed. The Mini App reads `WebAppStartParam` and
-`start_param` from MAX initialization data. After upgrading, send `/start` to get
-a new button; existing messages retain their old buttons.
-See [MAX deep links](https://dev.max.ru/docs/webapps/introduction).
+`start_param` from MAX initialization data. The built-in MAX launch button has
+no group parameter: the Mini App posts raw MAX initData to `/api/public/max/group`.
+The server verifies its HMAC signature and timestamp (up to one hour old), then
+looks up the user's saved MAX group. Users without a selection are prompted to
+choose one in the bot. Keep `MAX_BOT_TOKEN` set to the token of this same bot.
+See [MAX launch data validation](https://dev.max.ru/docs/webapps/validation).
 The hosting URL must be updated in
 the partner platform whenever the tunnel address changes.
 
