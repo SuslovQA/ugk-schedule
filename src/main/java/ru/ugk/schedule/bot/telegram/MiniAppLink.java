@@ -3,10 +3,12 @@ package ru.ugk.schedule.bot.telegram;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
+
 import org.springframework.web.util.UriComponentsBuilder;
 
 final class MiniAppLink {
-    private MiniAppLink() {}
+    private MiniAppLink() {
+    }
 
     static Optional<String> forGroup(String value, Long groupId) {
         if (value == null || value.isBlank()) return Optional.empty();

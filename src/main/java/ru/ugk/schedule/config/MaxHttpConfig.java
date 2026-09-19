@@ -2,6 +2,7 @@ package ru.ugk.schedule.config;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

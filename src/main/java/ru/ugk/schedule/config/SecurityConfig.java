@@ -24,19 +24,24 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean PasswordEncoder passwordEncoder(){ return new BCryptPasswordEncoder(); }
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-    @Bean UserDetailsService userDetailsService(AdminUserRepository repo){
+    @Bean
+    UserDetailsService userDetailsService(AdminUserRepository repo) {
         return username -> repo.findByUsername(username)
                 .map(u -> org.springframework.security.core.userdetails.User.withUsername(u.getUsername())
                         .password(u.getPasswordHash()).roles("ADMIN").disabled(!u.isEnabled()).build())
                 .orElseThrow(() -> new UsernameNotFoundException(username));
     }
 
-    @Bean SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(a -> a
-                        .requestMatchers("/css/**","/js/**","/miniapp/**","/api/public/**","/error").permitAll()
-                        .requestMatchers("/admin/**","/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/css/**", "/js/**", "/miniapp/**", "/api/public/**", "/error").permitAll()
+                        .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll())
                 .formLogin(f -> f.loginPage("/admin/login").defaultSuccessUrl("/admin", true).permitAll())
                 .logout(l -> l.logoutUrl("/admin/logout").logoutSuccessUrl("/admin/login?logout"))
