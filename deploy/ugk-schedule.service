@@ -1,0 +1,23 @@
+[Unit]
+Description=UGK Schedule
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ugk-schedule
+Group=ugk-schedule
+WorkingDirectory=/opt/ugk-schedule
+ExecStart=/usr/bin/java -Xms128m -Xmx512m -jar /opt/ugk-schedule/app.jar --server.address=127.0.0.1 --server.port=8080 --server.forward-headers-strategy=native --spring.thymeleaf.cache=true
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+SuccessExitStatus=143
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

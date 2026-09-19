@@ -113,4 +113,9 @@ No separate Subject/Teacher/Room catalogs are used in this version: these are pl
 
 ## Production notes
 
+Подробная инструкция на русском: [VPS и GitHub Actions](docs/VPS.md).
+Workflow `.github/workflows/deploy.yml` собирает и тестирует проект при push в
+`master`, отправляет JAR на VPS по SSH и перезапускает systemd-сервис.
+Шаблоны systemd, Nginx и серверного `.env` находятся в `deploy/`.
+
 For production add HTTPS/reverse proxy, strong admin password, webhook integrations, Mini App init-data validation for Telegram/MAX, audit logging and backups. Long polling is intentionally used here because it is easiest to run locally from IntelliJ IDEA.

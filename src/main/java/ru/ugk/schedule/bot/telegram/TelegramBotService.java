@@ -15,6 +15,7 @@ public class TelegramBotService {
     private final RestClient http;
     private final CatalogService catalog; private final UserPreferenceService prefs;
     private final String token; private final String miniAppUrl; private long offset = 0;
+    private final Map<Long, Set<Integer>> messages = new HashMap<>();
 
     public TelegramBotService(CatalogService catalog, UserPreferenceService prefs,
                               @Value("${app.telegram.token:}") String token,
@@ -36,10 +37,14 @@ public class TelegramBotService {
     private void handle(JsonNode u){
         if(u.has("message")){
             JsonNode m=u.path("message"); String text=m.path("text").asText(""); String userId=m.path("from").path("id").asText(); long chatId=m.path("chat").path("id").asLong();
-            if("/start".equals(text) || text.equalsIgnoreCase("start")) showCurrentOrLevels(chatId,userId);
+            if("/start".equals(text) || text.equalsIgnoreCase("start")) {
+                remember(chatId,m.path("message_id"));
+                showCurrentOrLevels(chatId,userId);
+            }
         } else if(u.has("callback_query")){
             JsonNode q=u.path("callback_query"); String userId=q.path("from").path("id").asText(); long chatId=q.path("message").path("chat").path("id").asLong();
             String data=q.path("data").asText(); answerCallback(q.path("id").asText());
+            remember(chatId,q.path("message").path("message_id"));
             processCallback(chatId,userId,data);
         }
     }
@@ -48,7 +53,7 @@ public class TelegramBotService {
         if(data.equals("RESET")){ prefs.reset(MessengerType.TELEGRAM,userId); showLevels(chatId); return; }
         if(data.startsWith("L:")){ prefs.setLevel(MessengerType.TELEGRAM,userId,Long.parseLong(data.substring(2))); showCourses(chatId,Long.parseLong(data.substring(2))); return; }
         if(data.startsWith("C:")){ prefs.setCourse(MessengerType.TELEGRAM,userId,Long.parseLong(data.substring(2))); showGroups(chatId,Long.parseLong(data.substring(2))); return; }
-        if(data.startsWith("G:")){ prefs.setGroup(MessengerType.TELEGRAM,userId,Long.parseLong(data.substring(2))); showMenu(chatId,userId); }
+        if(data.startsWith("G:")){ prefs.setGroup(MessengerType.TELEGRAM,userId,Long.parseLong(data.substring(2))); clearMessages(chatId); showMenu(chatId,userId); }
     }
     private void showCurrentOrLevels(long chatId,String userId){
         var p=prefs.find(MessengerType.TELEGRAM,userId); if(p.isPresent() && p.get().getGroup()!=null) showMenu(chatId,userId); else showLevels(chatId);
@@ -70,7 +75,22 @@ public class TelegramBotService {
     private List<List<Map<String,Object>>> callbackRows(List<Btn> buttons){ return buttons.stream().map(b->List.<Map<String,Object>>of(Map.of("text",b.text(),"callback_data",b.data()))).toList(); }
     private void send(long chatId,String text,List<List<Map<String,Object>>> rows){
         Map<String,Object> body=new LinkedHashMap<>(); body.put("chat_id",chatId); body.put("text",text); body.put("reply_markup",Map.of("inline_keyboard",rows));
-        http.post().uri("https://api.telegram.org/bot"+token+"/sendMessage").contentType(MediaType.APPLICATION_JSON).body(body).retrieve().toBodilessEntity();
+        JsonNode response=http.post().uri("https://api.telegram.org/bot"+token+"/sendMessage").contentType(MediaType.APPLICATION_JSON).body(body).retrieve().body(JsonNode.class);
+        if(response!=null) remember(chatId,response.path("result").path("message_id"));
+    }
+    private void remember(long chatId,JsonNode id){
+        if(id.isIntegralNumber() && id.asInt()>0) messages.computeIfAbsent(chatId,k->new LinkedHashSet<>()).add(id.asInt());
+    }
+    private void clearMessages(long chatId){
+        Set<Integer> ids=messages.remove(chatId);
+        if(ids==null) return;
+        for(Integer id:ids){
+            try{
+                http.post().uri("https://api.telegram.org/bot"+token+"/deleteMessage")
+                        .contentType(MediaType.APPLICATION_JSON).body(Map.of("chat_id",chatId,"message_id",id))
+                        .retrieve().toBodilessEntity();
+            }catch(Exception e){ System.err.println("Telegram: could not delete setup message "+id); }
+        }
     }
     private void answerCallback(String id){ try{ http.post().uri("https://api.telegram.org/bot"+token+"/answerCallbackQuery").contentType(MediaType.APPLICATION_JSON).body(Map.of("callback_query_id",id)).retrieve().toBodilessEntity(); }catch(Exception ignored){} }
 }

@@ -1,6 +1,40 @@
-<!doctype html><html lang="ru" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Расписание</title><link rel="stylesheet" href="/css/app.css"></head><body>
-<header><strong>UGK Schedule</strong><nav><a href="/admin">Справочники</a><a href="/admin/schedule">Расписание</a></nav></header><main class="container"><h1>Редактор расписания</h1>
-<div class="filters"><select id="level"><option value="">Уровень образования</option><option th:each="x:${levels}" th:value="${x.id}" th:text="${x.name}"></option></select><select id="course"><option value="">Курс</option></select><select id="group"><option value="">Группа / направление</option></select></div>
-<div id="scheduleWrap" class="schedule-wrap"><p class="hint">Выберите уровень, курс и группу. Затем нажмите на ячейку таблицы.</p></div></main>
-<dialog id="entryDialog"><form id="entryForm" method="dialog"><input type="hidden" id="entryId"><input type="hidden" id="entryDay"><label>Предмет<input id="subject" required></label><label>Время<input id="startTime" type="time" required></label><label>Время окончания<input id="endTime" type="time"></label><label>Аудитория<input id="room"></label><label>Преподаватель<input id="teacherName"></label><label>Примечание<textarea id="note"></textarea></label><div class="dialog-actions"><button type="button" id="deleteBtn" class="danger">Удалить</button><button type="button" id="cancelBtn">Отмена</button><button type="submit">Сохранить</button></div></form></dialog>
-<script src="/js/admin-schedule.js"></script></body></html>
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Расписание</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header><strong>Расписание УГК</strong>
+    <nav><a href="/admin">Справочники</a><a href="/admin/schedule">Расписание</a></nav>
+</header>
+<main class="container"><h1>Редактор расписания</h1>
+    <div class="filters"><select id="level">
+        <option value="">Уровень образования</option>
+        <option th:each="x:${levels}" th:value="${x.id}" th:text="${x.name}"></option>
+    </select><select id="course">
+        <option value="">Курс</option>
+    </select><select id="group">
+        <option value="">Группа / направление</option>
+    </select></div>
+    <div id="scheduleWrap" class="schedule-wrap"><p class="hint">Выберите уровень, курс и группу. Затем нажмите на
+        ячейку таблицы.</p></div>
+</main>
+<dialog id="entryDialog">
+    <form id="entryForm" method="dialog"><input type="hidden" id="entryId"><input type="hidden" id="entryDay"><label>Предмет<input
+            id="subject" required></label><label>Время<input id="startTime" type="time" required></label><label>Время
+        окончания<input id="endTime" type="time"></label><label>Аудитория<input
+            id="room"></label><label>Преподаватель<input id="teacherName"></label><label>Примечание<textarea
+            id="note"></textarea></label>
+        <div class="dialog-actions">
+            <button type="button" id="deleteBtn" class="danger">Удалить</button>
+            <button type="button" id="cancelBtn">Отмена</button>
+            <button type="submit">Сохранить</button>
+        </div>
+    </form>
+</dialog>
+<script src="/js/admin-schedule.js"></script>
+</body>
+</html>

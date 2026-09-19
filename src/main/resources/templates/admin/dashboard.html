@@ -1,29 +1,157 @@
-<!doctype html><html lang="ru" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Администрирование</title><link rel="stylesheet" href="/css/app.css"></head><body>
-<header><strong>UGK Schedule</strong><nav><a href="/admin">Справочники</a><a href="/admin/schedule">Расписание</a><form method="post" th:action="@{/admin/logout}"><button class="link-button">Выйти</button></form></nav></header>
-<main class="container"><h1>Настройки расписания</h1><div th:if="${message}" class="success" th:text="${message}"></div><div th:if="${error}" class="error" th:text="${error}"></div>
-<section class="panel"><h2>Уровни образования</h2><form class="inline-form" method="post" th:action="@{/admin/levels}"><input name="name" placeholder="Название" required><input name="maxCourses" type="number" min="1" max="10" placeholder="Курсов" required><input name="sortOrder" type="number" value="0"><label><input type="checkbox" name="active" value="true" checked> Активен</label><button>Добавить</button></form>
-<table><tr><th>Название</th><th>Макс. курсов</th><th>Порядок</th><th>Активен</th><th></th></tr><tr th:each="x:${levels}"><td colspan="5"><form class="row-edit" method="post" th:action="@{/admin/levels}"><input type="hidden" name="id" th:value="${x.id}"><input name="name" th:value="${x.name}" required><input name="maxCourses" type="number" min="1" max="10" th:value="${x.maxCourses}" required><input name="sortOrder" type="number" th:value="${x.sortOrder}"><label><input type="checkbox" name="active" value="true" th:checked="${x.active}"> Активен</label><button>Сохранить</button></form><form class="delete-form" th:action="@{'/admin/levels/'+${x.id}+'/delete'}" method="post"><button class="danger">Удалить</button></form></td></tr></table></section>
-<section class="panel"><h2>Курсы</h2>
-<form class="bulk-form" method="post" th:action="@{/admin/courses/bulk}">
-<fieldset class="catalog-choices"><legend>Уровни образования — можно выбрать несколько</legend>
-<label th:each="x:${levels}"><input type="checkbox" name="levelIds" th:value="${x.id}"><span th:text="${x.name+' (1–'+x.maxCourses+' курс)'}"></span></label>
-<p class="hint" th:if="${#lists.isEmpty(levels)}">Сначала добавьте уровень образования выше.</p>
-</fieldset>
-<div class="inline-form"><label>Номер курса <input name="number" type="number" min="1" max="10" required></label><label>Название <input name="name" maxlength="120" placeholder="Например, 2 курс"></label><label><input type="checkbox" name="active" value="true" checked> Активен</label><button>Добавить в выбранные уровни</button></div>
-<p class="hint">Без названия будет использовано «N курс». Уже существующие курсы сохранятся без изменений.</p>
-</form>
-<table><tr><th colspan="2">Редактирование</th></tr><tr th:each="x:${courses}"><td><form class="row-edit" method="post" th:action="@{/admin/courses}"><input type="hidden" name="id" th:value="${x.id}"><select name="levelId" required><option th:each="l:${levels}" th:value="${l.id}" th:text="${l.name}" th:selected="${l.id==x.educationLevel.id}"></option></select><input name="number" type="number" min="1" max="10" th:value="${x.number}" required><input name="name" th:value="${x.name}" required><label><input type="checkbox" name="active" value="true" th:checked="${x.active}"> Активен</label><button>Сохранить</button></form></td><td><form th:action="@{'/admin/courses/'+${x.id}+'/delete'}" method="post"><button class="danger">Удалить</button></form></td></tr></table></section>
-<section class="panel"><h2>Группы / направления</h2>
-<form class="bulk-form" method="post" th:action="@{/admin/groups/bulk}">
-<div class="inline-form"><label>Название группы <input name="name" maxlength="180" placeholder="Например, ДХО" required></label><label><input type="checkbox" name="active" value="true" checked> Активна</label></div>
-<p>Выберите курсы в нужных уровнях образования:</p>
-<div class="catalog-levels">
-<fieldset class="catalog-choices" th:each="l:${levels}"><legend th:text="${l.name}"></legend>
-<label th:each="c:${courses}" th:if="${c.educationLevel.id == l.id}"><input type="checkbox" name="courseIds" th:value="${c.id}"><span th:text="${c.name}"></span><span class="hint" th:unless="${c.active}"> (неактивен)</span></label>
-</fieldset>
-</div>
-<p class="hint" th:if="${#lists.isEmpty(courses)}">Сначала добавьте курсы выше.</p>
-<p class="hint">Для каждого выбранного курса создаётся группа со своим расписанием. Уже существующие группы с таким названием сохранятся без изменений.</p>
-<button>Добавить в выбранные курсы</button>
-</form>
-<table><tr><th>Редактирование</th><th></th></tr><tr th:each="x:${groups}"><td><form class="row-edit" method="post" th:action="@{/admin/groups}"><input type="hidden" name="id" th:value="${x.id}"><select name="courseId" required><option th:each="c:${courses}" th:value="${c.id}" th:text="${c.educationLevel.name+' — '+c.name}" th:selected="${c.id==x.course.id}"></option></select><input name="name" th:value="${x.name}" required><label><input type="checkbox" name="active" value="true" th:checked="${x.active}"> Активна</label><button>Сохранить</button></form></td><td><form th:action="@{'/admin/groups/'+${x.id}+'/delete'}" method="post"><button class="danger">Удалить</button></form></td></tr></table></section></main></body></html>
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Администрирование</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header><strong>Расписание УГК</strong>
+    <nav><a href="/admin">Справочники</a><a href="/admin/schedule">Расписание</a>
+        <form method="post" th:action="@{/admin/logout}">
+            <button class="link-button">Выйти</button>
+        </form>
+    </nav>
+</header>
+<main class="container"><h1>Настройки расписания</h1>
+    <div th:if="${message}" class="success" th:text="${message}"></div>
+    <div th:if="${error}" class="error" th:text="${error}"></div>
+    <section class="panel"><h2>Уровни образования</h2>
+        <form class="inline-form" method="post" th:action="@{/admin/levels}"><input name="name" placeholder="Название"
+                                                                                    required><input name="maxCourses"
+                                                                                                    type="number"
+                                                                                                    min="1" max="10"
+                                                                                                    placeholder="Курсов"
+                                                                                                    required><input
+                name="sortOrder" type="number" value="0"><label><input type="checkbox" name="active" value="true"
+                                                                       checked> Активен</label>
+            <button>Добавить</button>
+        </form>
+        <table>
+            <tr>
+                <th>Название</th>
+                <th>Макс. курсов</th>
+                <th>Порядок</th>
+                <th>Активен</th>
+                <th></th>
+            </tr>
+            <tr th:each="x:${levels}">
+                <td colspan="5">
+                    <form class="row-edit" method="post" th:action="@{/admin/levels}"><input type="hidden" name="id"
+                                                                                             th:value="${x.id}"><input
+                            name="name" th:value="${x.name}" required><input name="maxCourses" type="number" min="1"
+                                                                             max="10" th:value="${x.maxCourses}"
+                                                                             required><input name="sortOrder"
+                                                                                             type="number"
+                                                                                             th:value="${x.sortOrder}"><label><input
+                            type="checkbox" name="active" value="true" th:checked="${x.active}"> Активен</label>
+                        <button>Сохранить</button>
+                    </form>
+                    <form class="delete-form" th:action="@{'/admin/levels/'+${x.id}+'/delete'}" method="post">
+                        <button class="danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </section>
+    <section class="panel"><h2>Курсы</h2>
+        <form class="bulk-form" method="post" th:action="@{/admin/courses/bulk}">
+            <fieldset class="catalog-choices">
+                <legend>Уровни образования — можно выбрать несколько</legend>
+                <label th:each="x:${levels}"><input type="checkbox" name="levelIds" th:value="${x.id}"><span
+                        th:text="${x.name+' (1–'+x.maxCourses+' курс)'}"></span></label>
+                <p class="hint" th:if="${#lists.isEmpty(levels)}">Сначала добавьте уровень образования выше.</p>
+            </fieldset>
+            <div class="inline-form"><label>Номер курса <input name="number" type="number" min="1" max="10"
+                                                               required></label><label>Название <input name="name"
+                                                                                                       maxlength="120"
+                                                                                                       placeholder="Например, 2 курс"></label><label><input
+                    type="checkbox" name="active" value="true" checked> Активен</label>
+                <button>Добавить в выбранные уровни</button>
+            </div>
+            <p class="hint">Без названия будет использовано «N курс». Уже существующие курсы сохранятся без
+                изменений.</p>
+        </form>
+        <table>
+            <tr>
+                <th colspan="2">Редактирование</th>
+            </tr>
+            <tr th:each="x:${courses}">
+                <td>
+                    <form class="row-edit" method="post" th:action="@{/admin/courses}"><input type="hidden" name="id"
+                                                                                              th:value="${x.id}"><select
+                            name="levelId" required>
+                        <option th:each="l:${levels}" th:value="${l.id}" th:text="${l.name}"
+                                th:selected="${l.id==x.educationLevel.id}"></option>
+                    </select><input name="number" type="number" min="1" max="10" th:value="${x.number}" required><input
+                            name="name" th:value="${x.name}" required><label><input type="checkbox" name="active"
+                                                                                    value="true"
+                                                                                    th:checked="${x.active}">
+                        Активен</label>
+                        <button>Сохранить</button>
+                    </form>
+                </td>
+                <td>
+                    <form th:action="@{'/admin/courses/'+${x.id}+'/delete'}" method="post">
+                        <button class="danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </section>
+    <section class="panel"><h2>Группы / направления</h2>
+        <form class="bulk-form" method="post" th:action="@{/admin/groups/bulk}">
+            <div class="inline-form"><label>Название группы <input name="name" maxlength="180"
+                                                                   placeholder="Например, ДХО"
+                                                                   required></label><label><input type="checkbox"
+                                                                                                  name="active"
+                                                                                                  value="true" checked>
+                Активна</label></div>
+            <p>Выберите курсы в нужных уровнях образования:</p>
+            <div class="catalog-levels">
+                <fieldset class="catalog-choices" th:each="l:${levels}">
+                    <legend th:text="${l.name}"></legend>
+                    <label th:each="c:${courses}" th:if="${c.educationLevel.id == l.id}"><input type="checkbox"
+                                                                                                name="courseIds"
+                                                                                                th:value="${c.id}"><span
+                            th:text="${c.name}"></span><span class="hint"
+                                                             th:unless="${c.active}"> (неактивен)</span></label>
+                </fieldset>
+            </div>
+            <p class="hint" th:if="${#lists.isEmpty(courses)}">Сначала добавьте курсы выше.</p>
+            <p class="hint">Для каждого выбранного курса создаётся группа со своим расписанием. Уже существующие группы
+                с таким названием сохранятся без изменений.</p>
+            <button>Добавить в выбранные курсы</button>
+        </form>
+        <table>
+            <tr>
+                <th>Редактирование</th>
+                <th></th>
+            </tr>
+            <tr th:each="x:${groups}">
+                <td>
+                    <form class="row-edit" method="post" th:action="@{/admin/groups}"><input type="hidden" name="id"
+                                                                                             th:value="${x.id}"><select
+                            name="courseId" required>
+                        <option th:each="c:${courses}" th:value="${c.id}"
+                                th:text="${c.educationLevel.name+' — '+c.name}"
+                                th:selected="${c.id==x.course.id}"></option>
+                    </select><input name="name" th:value="${x.name}" required><label><input type="checkbox"
+                                                                                            name="active" value="true"
+                                                                                            th:checked="${x.active}">
+                        Активна</label>
+                        <button>Сохранить</button>
+                    </form>
+                </td>
+                <td>
+                    <form th:action="@{'/admin/groups/'+${x.id}+'/delete'}" method="post">
+                        <button class="danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </section>
+</main>
+</body>
+</html>
