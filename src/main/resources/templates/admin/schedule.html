@@ -8,7 +8,11 @@
 </head>
 <body>
 <header><strong>Расписание УГК</strong>
-    <nav><a href="/admin">Справочники</a><a href="/admin/schedule">Расписание</a></nav>
+    <nav><a href="/admin">Справочники</a><a href="/admin/schedule">Расписание</a>
+        <form method="post" th:action="@{/admin/logout}">
+            <button type="submit" class="link-button">Выйти</button>
+        </form>
+    </nav>
 </header>
 <main class="container"><h1>Редактор расписания</h1>
     <div class="filters"><select id="level">

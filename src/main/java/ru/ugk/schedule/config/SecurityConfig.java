@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/miniapp/**", "/api/public/**", "/error").permitAll()
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll())
-                .formLogin(f -> f.loginPage("/admin/login").defaultSuccessUrl("/admin", true).permitAll())
+                .formLogin(f -> f.loginPage("/admin/login").defaultSuccessUrl("/admin/schedule", true).permitAll())
                 .logout(l -> l.logoutUrl("/admin/logout").logoutSuccessUrl("/admin/login?logout"))
                 .csrf(c -> c.ignoringRequestMatchers("/api/**"));
         return http.build();
