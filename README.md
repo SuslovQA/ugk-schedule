@@ -83,11 +83,13 @@ MAX_BOT_TOKEN=...
 In MAX Partner Platform bind the HTTPS Mini App URL to the bot. The project uses `https://platform-api2.max.ru` and long polling for local development. For production, replace polling with a webhook subscription.
 
 Enter the current `MINIAPP_URL` from `.env` in the MAX Partner Platform.
-The MAX `open_app` button resolves the current bot ID and username using `/me`,
-caches them and sends both `contact_id` and the required `web_app` username.
-`MAX_BOT_NAME` is no longer needed.
-The button passes
-the selected group as `payload=g<groupId>`. The hosting URL must be updated in
+The MAX schedule button resolves the current bot identity using `/me`, caches it,
+and opens `https://max.ru/<username>?startapp=g<groupId>` to pass the selected group.
+`MAX_BOT_NAME` is no longer needed. The Mini App reads `WebAppStartParam` and
+`start_param` from MAX initialization data. After upgrading, send `/start` to get
+a new button; existing messages retain their old buttons.
+See [MAX deep links](https://dev.max.ru/docs/webapps/introduction).
+The hosting URL must be updated in
 the partner platform whenever the tunnel address changes.
 
 MAX requires the Russian Trusted Root CA certificate. The project bundles the

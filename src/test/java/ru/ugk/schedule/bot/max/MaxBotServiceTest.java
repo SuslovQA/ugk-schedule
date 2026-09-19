@@ -56,7 +56,7 @@ class MaxBotServiceTest {
     }
 
     @Test
-    void opensAppByAuthenticatedBotIdAndCachesIdentity() {
+    void opensAppWithGroupDeepLinkAndCachesIdentity() {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
         var prefs = mock(UserPreferenceService.class);
@@ -79,10 +79,8 @@ class MaxBotServiceTest {
             }
             server.expect(requestTo("https://platform-api2.max.ru/messages?user_id=7"))
                     .andExpect(header("Authorization", "test-token"))
-                    .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].type").value("open_app"))
-                    .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].contact_id").value(12345678901L))
-                    .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].web_app").value("actual_schedule_bot"))
-                    .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].payload").value("g4"))
+                    .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].type").value("link"))
+                    .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].url").value("https://max.ru/actual_schedule_bot?startapp=g4"))
                     .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
         }
         var bot = new MaxBotService(mock(CatalogService.class), prefs, "test-token", builder.build());

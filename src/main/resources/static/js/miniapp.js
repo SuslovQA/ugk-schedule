@@ -5,10 +5,14 @@
     let groupId = qs.get('groupId');
     if (!/^[1-9]\d*$/.test(groupId || '')) groupId = null;
     groupId ||= fromStart(qs.get('WebAppStartParam')) || fromStart(fragment.get('WebAppStartParam'));
+    // MAX can include start_param inside the URL-encoded WebAppData envelope.
+    const fromInitData = value => fromStart(new URLSearchParams(value || '').get('start_param'));
+    groupId ||= fromInitData(qs.get('WebAppData')) || fromInitData(fragment.get('WebAppData'));
     if (!groupId) {
         try {
             if (!window.WebApp) await loadMaxBridge();
-            groupId = fromStart(window.WebApp?.initDataUnsafe?.start_param);
+            groupId = fromStart(window.WebApp?.initDataUnsafe?.start_param)
+                || fromInitData(window.WebApp?.initData);
         } catch (e) {
             out.textContent = 'Не удалось загрузить MAX Bridge. Проверьте подключение и откройте мини-приложение заново.';
             return;
