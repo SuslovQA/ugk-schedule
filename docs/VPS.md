@@ -286,3 +286,34 @@ README задачи по проверке Mini App init-data, аудиту и we
 Справка: [actions/checkout](https://github.com/actions/checkout),
 [actions/setup-java](https://github.com/actions/setup-java),
 [Certbot](https://certbot.eff.org/instructions?ws=nginx&os=snap).
+
+## Файловые логи
+
+Обновлённый `deploy/ugk-schedule.service` создаёт каталог `/var/log/ugk-schedule`
+с владельцем `ugk-schedule` через `LogsDirectory`. Он доступен сервису для записи
+даже при `ProtectSystem=strict`.
+
+Пример файлов: `/var/log/ugk-schedule/2026-09-20/application.0.log.gz`
+и активный `application.1.log`. При достижении 10 МБ файл сжимается в gzip,
+запись продолжается в следующем. При смене даты новый файл создаётся в новой папке
+при следующей записи в лог. Дата соответствует часовому поясу JVM на сервере.
+Логи также остаются в консоли/journalctl.
+
+Настройки в `.env`: `APP_LOG_MAX_FILE_SIZE=10MB`, `APP_LOG_HISTORY_DAYS=0`.
+Значение `0` сохраняет архивы без автоматического удаления. Например, `30`
+включает очистку архивов старше 30 дней. Локально `APP_LOG_DIR=./logs`;
+на сервере unit задаёт `APP_LOG_DIR=/var/log/ugk-schedule` с приоритетом над `.env`.
+
+Для уже установленного сервиса один раз обновите unit (обычный workflow меняет
+только JAR). Сначала скопируйте новый `deploy/ugk-schedule.service` в `/tmp/` на VPS,
+затем выполните:
+
+```bash
+sudo install -o root -g root -m 644 /tmp/ugk-schedule.service /etc/systemd/system/ugk-schedule.service
+sudo systemctl daemon-reload
+sudo systemctl restart ugk-schedule.service
+sudo find /var/log/ugk-schedule -type f
+```
+
+После установки unit разверните новую версию JAR. Настоящий `.env` повторно
+копировать из шаблона не нужно: существующие пароли и токены должны сохраниться.

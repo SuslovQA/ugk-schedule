@@ -13,6 +13,7 @@ import java.util.*;
 
 @Service
 public class TelegramBotService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TelegramBotService.class);
     private final RestClient http;
     private final CatalogService catalog;
     private final UserPreferenceService prefs;
@@ -42,7 +43,7 @@ public class TelegramBotService {
                 handle(u);
             }
         } catch (Exception e) {
-            System.err.println("Telegram polling: " + e.getMessage());
+            log.warn("Telegram polling: " + String.valueOf(e.getMessage()).replace(token, "[REDACTED]"));
         }
     }
 
@@ -151,7 +152,7 @@ public class TelegramBotService {
                         .contentType(MediaType.APPLICATION_JSON).body(Map.of("chat_id", chatId, "message_id", id))
                         .retrieve().toBodilessEntity();
             } catch (Exception e) {
-                System.err.println("Telegram: could not delete setup message " + id);
+                log.warn("Telegram: could not delete setup message " + id);
             }
         }
     }

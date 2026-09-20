@@ -1,0 +1,24 @@
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <springProperty name="APP_LOG_DIRECTORY" source="app.logging.directory" defaultValue="./logs"/>
+    <springProperty name="APP_LOG_MAX_FILE_SIZE" source="app.logging.max-file-size" defaultValue="10MB"/>
+    <springProperty name="APP_LOG_HISTORY" source="app.logging.history-days" defaultValue="0"/>
+    <appender name="DAILY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- Omitting file makes the active file follow the current date and index. -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${APP_LOG_DIRECTORY}/%d{yyyy-MM-dd}/application.%i.log.gz</fileNamePattern>
+            <maxFileSize>${APP_LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${APP_LOG_HISTORY}</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{60} - %msg%n%ex</pattern>
+        </encoder>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="DAILY_FILE"/>
+    </root>
+</configuration>

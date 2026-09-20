@@ -14,6 +14,7 @@ import java.util.*;
 
 @Service
 public class MaxBotService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MaxBotService.class);
     private final RestClient http;
     private final CatalogService catalog;
     private final UserPreferenceService prefs;
@@ -41,11 +42,11 @@ public class MaxBotService {
                 try {
                     handle(u);
                 } catch (Exception e) {
-                    System.err.println("MAX update " + u.path("update_type").asText() + ": " + e.getMessage());
+                    log.warn("MAX update " + u.path("update_type").asText() + ": " + String.valueOf(e.getMessage()).replace(token, "[REDACTED]"));
                 }
             }
         } catch (Exception e) {
-            System.err.println("MAX polling: " + e.getMessage());
+            log.warn("MAX polling: " + String.valueOf(e.getMessage()).replace(token, "[REDACTED]"));
         }
     }
 
@@ -178,7 +179,7 @@ public class MaxBotService {
                 http.delete().uri("https://platform-api2.max.ru/messages?message_id={id}", id)
                         .header("Authorization", token).retrieve().toBodilessEntity();
             } catch (Exception e) {
-                System.err.println("MAX: could not delete setup message " + id);
+                log.warn("MAX: could not delete setup message " + id);
             }
         }
     }

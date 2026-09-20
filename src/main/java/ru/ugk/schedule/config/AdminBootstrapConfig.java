@@ -10,6 +10,7 @@ import ru.ugk.schedule.repository.AdminUserRepository;
 
 @Configuration
 public class AdminBootstrapConfig {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AdminBootstrapConfig.class);
     @Bean
     CommandLineRunner createAdmin(AdminUserRepository repo, PasswordEncoder encoder,
                                   @Value("${app.admin.username:admin}") String username,
@@ -20,7 +21,7 @@ public class AdminBootstrapConfig {
                 u.setUsername(username);
                 u.setPasswordHash(encoder.encode(password));
                 repo.save(u);
-                System.out.println("Created initial admin user: " + username + ". Change APP_ADMIN_PASSWORD for production.");
+                log.info("Created initial admin user: " + username + ". Change APP_ADMIN_PASSWORD for production.");
             }
         };
     }

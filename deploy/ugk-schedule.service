@@ -8,6 +8,9 @@ Type=simple
 User=ugk-schedule
 Group=ugk-schedule
 WorkingDirectory=/opt/ugk-schedule
+LogsDirectory=ugk-schedule
+LogsDirectoryMode=0750
+Environment=APP_LOG_DIR=/var/log/ugk-schedule
 ExecStart=/usr/bin/java -Xms128m -Xmx512m -jar /opt/ugk-schedule/app.jar --server.address=127.0.0.1 --server.port=8080 --server.forward-headers-strategy=native --spring.thymeleaf.cache=true
 Restart=on-failure
 RestartSec=5
