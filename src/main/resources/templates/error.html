@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Не удалось открыть страницу — Расписание УГК</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="error-page">
+<main class="error-card">
+    <p class="error-brand">Расписание УГК</p>
+    <p class="error-code" th:text="${status ?: 500}">500</p>
+    <div th:switch="${status}">
+        <th:block th:case="404">
+            <h1>Страница не найдена</h1>
+            <p>Возможно, ссылка устарела или адрес указан неверно. Вернитесь назад или откройте расписание из бота.</p>
+        </th:block>
+        <th:block th:case="403">
+            <h1>Нет доступа</h1>
+            <p>У вас нет доступа к этой странице или срок действия формы истёк. Вернитесь назад и откройте страницу заново.</p>
+        </th:block>
+        <th:block th:case="400">
+            <h1>Не удалось выполнить запрос</h1>
+            <p>Проверьте введённые данные и попробуйте ещё раз.</p>
+        </th:block>
+        <th:block th:case="*">
+            <h1>Не удалось открыть страницу</h1>
+            <p>Попробуйте вернуться чуть позже. Если ошибка повторится, сообщите администратору код ошибки и время её появления.</p>
+        </th:block>
+    </div>
+    <div class="error-actions">
+        <button type="button" id="errorBack" hidden>Вернуться назад</button>
+        <a href="/miniapp/schedule">Открыть расписание</a>
+    </div>
+    <noscript><p>Вы также можете вернуться с помощью кнопки «Назад» в браузере.</p></noscript>
+</main>
+<script src="/js/error-page.js"></script>
+</body>
+</html>

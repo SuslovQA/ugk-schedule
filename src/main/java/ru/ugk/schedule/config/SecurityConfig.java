@@ -16,7 +16,7 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     SecurityFilterChain miniAppSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/miniapp/**")
+        http.securityMatcher("/miniapp/**", "/error")
                 .authorizeHttpRequests(a -> a.anyRequest().permitAll())
                 .headers(h -> h.frameOptions(f -> f.disable())
                         .contentSecurityPolicy(c -> c.policyDirectives(
