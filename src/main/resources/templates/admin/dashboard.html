@@ -17,7 +17,7 @@
 <main class="container"><h1>Настройки расписания</h1>
     <div th:if="${message}" class="success" th:text="${message}"></div>
     <div th:if="${error}" class="error" th:text="${error}"></div>
-    <section class="panel"><h2>Уровни образования</h2>
+    <details class="panel catalog-section"><summary><h2>Уровни образования</h2></summary>
         <form class="inline-form" method="post" th:action="@{/admin/levels}"><input name="name" placeholder="Название"
                                                                                     required><input name="maxCourses"
                                                                                                     type="number"
@@ -54,8 +54,8 @@
                 </td>
             </tr>
         </table>
-    </section>
-    <section class="panel"><h2>Курсы</h2>
+    </details>
+    <details class="panel catalog-section"><summary><h2>Курсы</h2></summary>
         <form class="bulk-form" method="post" th:action="@{/admin/courses/bulk}">
             <fieldset class="catalog-choices">
                 <legend>Уровни образования — можно выбрать несколько</legend>
@@ -99,8 +99,8 @@
                 </td>
             </tr>
         </table>
-    </section>
-    <section class="panel"><h2>Группы / направления</h2>
+    </details>
+    <details class="panel catalog-section"><summary><h2>Группы / направления</h2></summary>
         <form class="bulk-form" method="post" th:action="@{/admin/groups/bulk}">
             <div class="inline-form"><label>Название группы <input name="name" maxlength="180"
                                                                    placeholder="Например, ДХО"
@@ -151,7 +151,7 @@
                 </td>
             </tr>
         </table>
-    </section>
+    </details>
 </main>
 </body>
 </html>

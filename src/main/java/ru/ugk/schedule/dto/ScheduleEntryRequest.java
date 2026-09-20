@@ -15,4 +15,8 @@ public record ScheduleEntryRequest(
         @Size(max = 180) String teacherName,
         @Size(max = 500) String note
 ) {
+    @AssertTrue(message = "Время окончания не должно быть раньше времени начала")
+    public boolean isTimeRangeValid() {
+        return startTime == null || endTime == null || !endTime.isBefore(startTime);
+    }
 }

@@ -128,7 +128,8 @@ th, td {
     height: 110px;
     vertical-align: top;
     position: relative;
-    padding: 6px
+    padding: 6px;
+    max-width: 100px;
 }
 
 .entry {
@@ -330,4 +331,25 @@ dialog label {
 .lesson time {
     min-width: 120px;
     white-space: nowrap
+}
+.catalog-section > summary {
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.catalog-section > summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+}
+
+.catalog-section[open] > summary {
+    margin-bottom: 20px;
+}
+
+.catalog-section > summary:focus-visible {
+    outline: 2px solid #3156d3;
+    outline-offset: 6px;
+    border-radius: 4px;
 }

@@ -82,11 +82,22 @@ function openEntry(day, time, id) {
     teacherName.value = e?.teacherName || '';
     note.value = e?.note || '';
     deleteBtn.style.visibility = id ? 'visible' : 'hidden';
+    validateEndTime();
     dialog.showModal();
 }
 
+function validateEndTime() {
+    const invalid = startTime.value && endTime.value && endTime.value < startTime.value;
+    endTime.setCustomValidity(invalid ? 'Время окончания не должно быть раньше времени начала' : '');
+}
+
+startTime.addEventListener('input', validateEndTime);
+endTime.addEventListener('input', validateEndTime);
+
 form.onsubmit = async ev => {
     ev.preventDefault();
+    validateEndTime();
+    if (!form.reportValidity()) return;
     const payload = {
         groupId: Number(group.value),
         dayOfWeek: entryDay.value,
