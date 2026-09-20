@@ -21,6 +21,13 @@ function timeLabel(time) {
     return formatTime(time) + (end ? ' - ' + formatTime(end) : '');
 }
 
+function defaultEndTime(time) {
+    const index = defaultTimes.indexOf(time);
+    if (index < 0) return '';
+    const endSlot = index % 2 === 0 ? defaultTimes[index + 1] : time;
+    return lessonTimes.get(endSlot) || lessonTimes.get(time) || '';
+}
+
 async function json(url, opts) {
     const r = await fetch(url, opts);
     if (!r.ok) throw new Error(await r.text());
@@ -70,7 +77,7 @@ function openEntry(day, time, id) {
     entryDay.value = day;
     subject.value = e?.subject || '';
     startTime.value = e?.startTime?.substring(0, 5) || time;
-    endTime.value = e ? (e.endTime?.substring(0, 5) || '') : (lessonTimes.get(time) || '');
+    endTime.value = e ? (e.endTime?.substring(0, 5) || '') : defaultEndTime(time);
     room.value = e?.room || '';
     teacherName.value = e?.teacherName || '';
     note.value = e?.note || '';
