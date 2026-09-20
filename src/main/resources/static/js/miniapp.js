@@ -59,6 +59,15 @@
         return;
     }
     try {
+        const groupResponse = await fetch(`/api/public/groups/${groupId}`, {
+            headers: {Accept: 'application/json'},
+            signal: AbortSignal.timeout(15000)
+        });
+        if (!groupResponse.ok) throw new Error(groupResponse.status === 404 ? 'Группа не найдена' : `HTTP ${groupResponse.status}`);
+        const group = await groupResponse.json();
+        const groupName = document.getElementById('miniGroupName');
+        groupName.textContent = group.name;
+        groupName.hidden = false;
         const r = await fetch(`/api/public/groups/${groupId}/schedule`, {
             headers: {Accept: 'application/json'},
             signal: AbortSignal.timeout(15000)

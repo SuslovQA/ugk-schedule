@@ -38,6 +38,11 @@ public class CatalogService {
     }
 
     @Transactional(readOnly = true)
+    public java.util.Optional<StudyGroup> findGroup(Long id) {
+        return groups.findById(id);
+    }
+
+    @Transactional(readOnly = true)
     public List<EducationLevel> allLevels() {
         return levels.findAll();
     }

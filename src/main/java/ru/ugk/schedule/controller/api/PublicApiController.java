@@ -36,4 +36,11 @@ public class PublicApiController {
     public Object schedule(@PathVariable Long id) {
         return schedules.getByGroup(id);
     }
+
+    @GetMapping("/groups/{id}")
+    public Map<String, Object> group(@PathVariable Long id) {
+        var group = catalog.findGroup(id).orElseThrow(() ->
+                new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Группа не найдена"));
+        return Map.of("id", group.getId(), "name", group.getName());
+    }
 }

@@ -6,11 +6,11 @@ const path = require('node:path');
 const code = fs.readFileSync(path.join(__dirname, '../../main/resources/static/js/miniapp.js'), 'utf8');
 
 async function open({search = '', hash = '', bridge = {}, telegram, savedGroup = 42, groupStatus = 200}) {
-    const out = {};
+    const out = {}; const groupName = {};
     const requests = [];
     await vm.runInNewContext(code, {
         location: {search, hash}, window: {WebApp: bridge, Telegram: telegram}, URLSearchParams, AbortSignal,
-        document: {getElementById: () => out},
+        document: {getElementById: id => id === 'miniGroupName' ? groupName : out},
         fetch: async (url, options) => {
             requests.push(url);
             if (url === '/api/public/max/group' || url === '/api/public/telegram/group') {
@@ -18,10 +18,11 @@ async function open({search = '', hash = '', bridge = {}, telegram, savedGroup =
                 assert.ok(JSON.parse(options.body).initData);
                 return {ok: groupStatus === 200, status: groupStatus, json: async () => ({groupId: savedGroup})};
             }
+            if (url === '/api/public/groups/42') return {ok: true, json: async () => ({id: 42, name: 'ДХО'})};
             return {ok: true, headers: {get: () => 'application/json'}, json: async () => []};
         }
     });
-    return {out, requests};
+    return {out, groupName, requests};
 }
 
 for (const [name, input] of Object.entries({
@@ -38,8 +39,10 @@ for (const [name, input] of Object.entries({
 })) {
     test(name, async () => {
         const result = await open(input);
-        assert.deepEqual(result.requests, ['/api/public/groups/42/schedule']);
+        assert.deepEqual(result.requests, ['/api/public/groups/42', '/api/public/groups/42/schedule']);
         assert.match(result.out.innerHTML, /Расписание пока не заполнено/);
+        assert.equal(result.groupName.textContent, 'ДХО');
+        assert.equal(result.groupName.hidden, false);
     });
 }
 
@@ -57,7 +60,7 @@ test('built-in MAX button loads saved group without start_param', async () => {
         {hash: '#WebAppData=' + encodeURIComponent('auth_date=123&user={"id":7}&hash=test')}
     ]) {
         const result = await open(input);
-        assert.deepEqual(result.requests, ['/api/public/max/group', '/api/public/groups/42/schedule']);
+        assert.deepEqual(result.requests, ['/api/public/max/group', '/api/public/groups/42', '/api/public/groups/42/schedule']);
     }
 });
 
@@ -80,7 +83,7 @@ test('Telegram built-in menu loads Telegram preferences without loading MAX Brid
         {telegram: {WebApp: {initData: 'user={"id":7}&hash=test'}}}
     ]) {
         const result = await open({...input, bridge: undefined});
-        assert.deepEqual(result.requests, ['/api/public/telegram/group', '/api/public/groups/42/schedule']);
+        assert.deepEqual(result.requests, ['/api/public/telegram/group', '/api/public/groups/42', '/api/public/groups/42/schedule']);
     }
 });
 
