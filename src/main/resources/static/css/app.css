@@ -272,6 +272,11 @@ dialog label {
     margin-top: 8px
 }
 
+.levels-table > tbody > tr > td > input {
+    width: 100%;
+    min-width: 0
+}
+
 @media (max-width: 900px) {
     .row-edit {
         grid-template-columns:1fr
@@ -379,3 +384,148 @@ dialog label {
 .error-card h1 { font-size: 1.6rem; }
 .error-card p { line-height: 1.6; }
 .error-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px; margin-top: 28px; }
+
+@media (min-width: 901px) {
+    .levels-table th:nth-child(4),
+    .levels-table td:nth-child(4),
+    .levels-table th:last-child,
+    .levels-table td:last-child {
+        width: 1%;
+        white-space: nowrap;
+    }
+
+    .level-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .level-actions .delete-form {
+        margin-top: 0;
+    }
+
+    .level-actions button {
+        width: 120px;
+    }
+}
+
+@media (max-width: 900px) {
+    .admin-page .catalog-section > table,
+    .admin-page .catalog-section > table > tbody {
+        display: block;
+    }
+
+    .admin-page .catalog-section > table > tbody > tr:first-child {
+        display: none;
+    }
+
+    .admin-page .catalog-section > table > tbody > tr:not(:first-child) {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        margin-top: 14px;
+        border: 1px solid #e0e4eb;
+        border-radius: 10px;
+    }
+
+    .admin-page .catalog-section td {
+        display: block;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    .admin-page .catalog-section td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .admin-page .catalog-section input:not([type="checkbox"]):not([type="hidden"]),
+    .admin-page .catalog-section select,
+    .admin-page .catalog-section button {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .admin-page .row-edit {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .admin-page header {
+        height: auto;
+        min-height: 64px;
+        padding: 12px 14px;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+    }
+
+    .admin-page header nav {
+        flex-wrap: wrap;
+        gap: 8px 14px;
+    }
+
+    .admin-page header nav a,
+    .admin-page header nav button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    .admin-page h1 {
+        font-size: 1.65rem;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-page .panel {
+        padding: 14px;
+        margin: 14px 0;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-page .catalog-section > summary {
+        font-size: 1.25rem;
+    }
+
+    .admin-page .catalog-levels {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-page .catalog-choices legend {
+        max-width: 100%;
+    }
+
+    .admin-page .filters > * {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .admin-page dialog {
+        width: calc(100% - 24px);
+        max-width: 440px;
+        max-height: calc(100dvh - 24px);
+    }
+
+    .admin-page dialog form {
+        min-width: 0;
+        padding: 16px;
+    }
+
+    .admin-page dialog input,
+    .admin-page dialog textarea {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .admin-page .dialog-actions {
+        flex-wrap: wrap;
+    }
+
+    .admin-page .dialog-actions button {
+        flex: 1 1 100px;
+        min-height: 44px;
+    }
+}

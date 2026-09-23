@@ -6,7 +6,7 @@
     <title>Администрирование</title>
     <link rel="stylesheet" href="/css/app.css">
 </head>
-<body>
+<body class="admin-page">
 <header><strong>Расписание УГК</strong>
     <nav><a href="/admin">Справочники</a><a href="/admin/schedule">Расписание</a>
         <form method="post" th:action="@{/admin/logout}">
@@ -28,7 +28,7 @@
                                                                        checked> Активен</label>
             <button>Добавить</button>
         </form>
-        <table>
+        <table class="levels-table">
             <tr>
                 <th>Название</th>
                 <th>Макс. курсов</th>
@@ -37,20 +37,31 @@
                 <th></th>
             </tr>
             <tr th:each="x:${levels}">
-                <td colspan="5">
-                    <form class="row-edit" method="post" th:action="@{/admin/levels}"><input type="hidden" name="id"
-                                                                                             th:value="${x.id}"><input
-                            name="name" th:value="${x.name}" required><input name="maxCourses" type="number" min="1"
-                                                                             max="10" th:value="${x.maxCourses}"
-                                                                             required><input name="sortOrder"
-                                                                                             type="number"
-                                                                                             th:value="${x.sortOrder}"><label><input
-                            type="checkbox" name="active" value="true" th:checked="${x.active}"> Активен</label>
+                <td data-label="Название">
+                    <input aria-label="Название" name="name" th:value="${x.name}" th:attr="form=${'level-edit-' + x.id}" required>
+                </td>
+                <td data-label="Макс. курсов">
+                    <input aria-label="Макс. курсов" name="maxCourses" type="number" min="1" max="10" th:value="${x.maxCourses}"
+                           th:attr="form=${'level-edit-' + x.id}" required>
+                </td>
+                <td data-label="Порядок">
+                    <input aria-label="Порядок" name="sortOrder" type="number" th:value="${x.sortOrder}"
+                           th:attr="form=${'level-edit-' + x.id}">
+                </td>
+                <td>
+                    <label><input type="checkbox" name="active" value="true" th:checked="${x.active}"
+                                  th:attr="form=${'level-edit-' + x.id}"> Активен</label>
+                </td>
+                <td>
+                    <div class="level-actions">
+                    <form th:id="${'level-edit-' + x.id}" method="post" th:action="@{/admin/levels}">
+                        <input type="hidden" name="id" th:value="${x.id}">
                         <button>Сохранить</button>
                     </form>
                     <form class="delete-form" th:action="@{'/admin/levels/'+${x.id}+'/delete'}" method="post">
                         <button class="danger">Удалить</button>
                     </form>
+                    </div>
                 </td>
             </tr>
         </table>
