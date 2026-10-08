@@ -71,7 +71,7 @@ public class TelegramBotService {
             String data = q.path("data").asText();
             answerCallback(q.path("id").asText());
             int messageId = q.path("message").path("message_id").asInt();
-            if (!data.equals("RESET")) deleteMessage(chatId, messageId);
+            deleteMessage(chatId, messageId);
             processCallback(chatId, userId, data);
         }
     }

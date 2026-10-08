@@ -13,6 +13,28 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class MaxBotServiceTest {
     @Test
+    void resetDeletesSavedSettingsMessageBeforeShowingLevels() {
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var prefs = mock(UserPreferenceService.class);
+        var catalog = mock(CatalogService.class);
+        server.expect(requestTo("https://platform-api2.max.ru/updates?timeout=1&limit=100"))
+                .andRespond(withSuccess("""
+                        {"updates":[{"update_type":"message_callback","callback":{"user":{"user_id":7},
+                        "payload":"RESET"},"message":{"body":{"mid":"saved"}}}]}
+                        """, MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://platform-api2.max.ru/messages?message_id=saved"))
+                .andExpect(method(org.springframework.http.HttpMethod.DELETE))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://platform-api2.max.ru/messages?user_id=7"))
+                .andExpect(jsonPath("$.text").value("Выберите уровень образования"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        new MaxBotService(catalog, prefs, "test-token", builder.build(), new ru.ugk.schedule.bot.TestInbox()).poll();
+        verify(prefs).reset(MessengerType.MAX, "7");
+        server.verify();
+    }
+
+    @Test
     void backFromGroupsDeletesCurrentMessageAndShowsCourses() {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();

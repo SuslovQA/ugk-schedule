@@ -16,6 +16,30 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class TelegramBotServiceTest {
     @Test
+    void resetDeletesSavedSettingsMessageBeforeShowingLevels() {
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var prefs = mock(UserPreferenceService.class);
+        var catalog = mock(CatalogService.class);
+        server.expect(requestTo("https://api.telegram.org/bottest/getUpdates?timeout=1&offset=0"))
+                .andRespond(withSuccess("""
+                        {"ok":true,"result":[{"update_id":1,"callback_query":{"id":"reset","from":{"id":7},
+                        "message":{"message_id":20,"chat":{"id":7}},"data":"RESET"}}]}
+                        """, MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://api.telegram.org/bottest/answerCallbackQuery"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://api.telegram.org/bottest/deleteMessage"))
+                .andExpect(jsonPath("$.message_id").value(20))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://api.telegram.org/bottest/sendMessage"))
+                .andExpect(jsonPath("$.text").value("Выберите уровень образования"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        new TelegramBotService(catalog, prefs, "test", "", builder, new ru.ugk.schedule.bot.TestInbox()).poll();
+        verify(prefs).reset(MessengerType.TELEGRAM, "7");
+        server.verify();
+    }
+
+    @Test
     void backFromGroupsDeletesCurrentMessageAndShowsCourses() {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();

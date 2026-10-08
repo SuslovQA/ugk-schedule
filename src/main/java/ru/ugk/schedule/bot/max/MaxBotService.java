@@ -66,7 +66,7 @@ public class MaxBotService {
             String userId = firstText(u.path("user").path("user_id"), u.path("callback").path("user").path("user_id"));
             String messageId = u.path("message").path("body").path("mid").asText("");
             String payload = u.path("callback").path("payload").asText();
-            if (!payload.equals("RESET")) deleteMessage(userId, messageId);
+            deleteMessage(userId, messageId);
             processCallback(userId, payload);
         }
     }
