@@ -34,13 +34,18 @@ public class PublicApiController {
 
     @GetMapping("/groups/{id}/schedule")
     public Object schedule(@PathVariable Long id) {
+        publicGroup(id);
         return schedules.getByGroup(id);
     }
 
     @GetMapping("/groups/{id}")
     public Map<String, Object> group(@PathVariable Long id) {
-        var group = catalog.findGroup(id).orElseThrow(() ->
-                new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Группа не найдена"));
+        var group = publicGroup(id);
         return Map.of("id", group.getId(), "name", group.getName());
+    }
+    private ru.ugk.schedule.domain.StudyGroup publicGroup(Long id) {
+        return catalog.findGroup(id).filter(g -> g.isActive() && g.getCourse().isActive()
+                && g.getCourse().getEducationLevel().isActive()).orElseThrow(() ->
+                new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Группа не найдена"));
     }
 }

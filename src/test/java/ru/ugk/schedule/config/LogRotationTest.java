@@ -27,7 +27,8 @@ class LogRotationTest {
         context.setMDCAdapter(new LogbackMDCAdapter());
         context.putProperty("APP_LOG_DIRECTORY", directory.toString().replace('\\', '/'));
         context.putProperty("APP_LOG_MAX_FILE_SIZE", "1KB");
-        context.putProperty("APP_LOG_HISTORY", "0");
+        context.putProperty("APP_LOG_HISTORY", "30");
+        context.putProperty("APP_LOG_TOTAL_SIZE_CAP", "1GB");
         var configurator = new JoranConfigurator();
         configurator.setContext(context);
         LocalDate date = LocalDate.now();
@@ -36,13 +37,16 @@ class LogRotationTest {
             context.getLogger("ROOT").detachAppender("CONSOLE");
             for (int i = 0; i < 100; i++) context.getLogger("rotation-test").info("event-{} {}", i, "Ж".repeat(100));
         } finally {
-            context.stop(); // Waits for asynchronous compression to finish.
+            context.stop();
         }
+        // Multiple compression tasks can finish after the last rollover future.
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(5)).untilAsserted(() -> {
         try (var paths = Files.walk(directory)) {
             var files = paths.filter(Files::isRegularFile).toList();
             assertThat(files).anyMatch(p -> p.toString().endsWith(".gz"));
             assertThat(files).anyMatch(p -> p.toString().endsWith(".log"));
-            assertThat(files).allMatch(p -> p.getParent().getFileName().toString().equals(date.toString())
+            assertThat(files).allMatch(p -> p.equals(directory.resolve("application.log"))
+                    || p.getParent().getFileName().toString().equals(date.toString())
                     || p.getParent().getFileName().toString().equals(LocalDate.now().toString()));
             var content = new StringBuilder();
             for (Path file : files) {
@@ -55,5 +59,6 @@ class LogRotationTest {
             assertThat(content.toString().lines().count()).isEqualTo(100);
             for (int i = 0; i < 100; i++) assertThat(content.toString()).contains("event-" + i + " ");
         }
+        });
     }
 }

@@ -14,8 +14,17 @@ public class AdminBootstrapConfig {
     @Bean
     CommandLineRunner createAdmin(AdminUserRepository repo, PasswordEncoder encoder,
                                   @Value("${app.admin.username:admin}") String username,
-                                  @Value("${app.admin.password:admin123}") String password) {
+                                  @Value("${app.admin.password:admin123}") String password,
+                                  org.springframework.core.env.Environment environment) {
         return args -> {
+            if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))
+                    && environment.getProperty("app.production.enforce-secret-policy", Boolean.class, false)) {
+                for (AdminUser admin : repo.findAll()) {
+                    if (admin.isEnabled() && java.util.List.of("admin123", "admin", "password", "postgres")
+                            .stream().anyMatch(weak -> encoder.matches(weak, admin.getPasswordHash())))
+                        throw new IllegalStateException("Disable or rotate existing default admin password before production startup");
+                }
+            }
             if (repo.findByUsername(username).isEmpty()) {
                 AdminUser u = new AdminUser();
                 u.setUsername(username);

@@ -23,7 +23,7 @@ class MiniAppSecurityTest {
                 .andExpect(status().isOk())
                 .andExpect(header().doesNotExist("X-Frame-Options"))
                 .andExpect(header().string("Content-Security-Policy",
-                        "frame-ancestors 'self' https://max.ru https://*.max.ru https://web.telegram.org https://*.telegram.org"));
+                        org.hamcrest.Matchers.containsString("frame-ancestors 'self' https://max.ru https://*.max.ru https://web.telegram.org https://*.telegram.org")));
     }
 
     @Test

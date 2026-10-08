@@ -15,35 +15,42 @@ import java.util.*;
 public class TelegramBotService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TelegramBotService.class);
     private final RestClient http;
+    private final ru.ugk.schedule.bot.BotUpdateInbox inbox;
+    private final String stream;
     private final CatalogService catalog;
     private final UserPreferenceService prefs;
     private final String token;
     private final String miniAppUrl;
-    private long offset = 0;
-    private final Map<Long, Set<Integer>> messages = new HashMap<>();
+    private final ru.ugk.schedule.bot.RecentBotMessages<Long, Integer> messages = new ru.ugk.schedule.bot.RecentBotMessages<>();
 
     public TelegramBotService(CatalogService catalog, UserPreferenceService prefs,
                               @Value("${app.telegram.token:}") String token,
-                              @Value("${app.miniapp.url:}") String miniAppUrl, RestClient.Builder builder) {
+                              @Value("${app.miniapp.url:}") String miniAppUrl, RestClient.Builder builder, ru.ugk.schedule.bot.BotUpdateInbox inbox) {
         this.catalog = catalog;
         this.prefs = prefs;
         this.token = token;
         this.miniAppUrl = miniAppUrl;
         this.http = builder.build();
+        this.inbox = inbox;
+        this.stream = ru.ugk.schedule.bot.BotUpdateInbox.stream("telegram", token);
     }
 
     @Scheduled(fixedDelayString = "${app.telegram.poll-delay-ms:1500}")
     public void poll() {
+        messages.expire();
         if (token.isBlank()) return;
         try {
+            inbox.drain(stream, this::handle);
+            Long saved = inbox.cursor(stream);
+            long offset = saved == null ? 0 : saved;
             JsonNode root = http.get().uri("https://api.telegram.org/bot" + token + "/getUpdates?timeout=1&offset=" + offset).retrieve().body(JsonNode.class);
             if (root == null || !root.path("ok").asBoolean()) return;
-            for (JsonNode u : root.path("result")) {
-                offset = Math.max(offset, u.path("update_id").asLong() + 1);
-                handle(u);
-            }
+            long next = offset;
+            for (JsonNode u : root.path("result")) next = Math.max(next, u.path("update_id").asLong() + 1);
+            inbox.capture(stream, next, root.path("result"));
+            inbox.drain(stream, this::handle);
         } catch (Exception e) {
-            log.warn("Telegram polling: " + String.valueOf(e.getMessage()).replace(token, "[REDACTED]"));
+            log.warn("Telegram polling failed: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -140,7 +147,7 @@ public class TelegramBotService {
 
     private void remember(long chatId, JsonNode id) {
         if (id.isIntegralNumber() && id.asInt() > 0)
-            messages.computeIfAbsent(chatId, k -> new LinkedHashSet<>()).add(id.asInt());
+            messages.remember(chatId, id.asInt());
     }
 
     private void clearMessages(long chatId) {

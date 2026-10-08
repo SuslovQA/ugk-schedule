@@ -29,11 +29,13 @@ public class CatalogService {
 
     @Transactional(readOnly = true)
     public List<Course> activeCourses(Long levelId) {
+        if (levels.findById(levelId).filter(EducationLevel::isActive).isEmpty()) return List.of();
         return courses.findByEducationLevelIdAndActiveTrueOrderByNumberAsc(levelId);
     }
 
     @Transactional(readOnly = true)
     public List<StudyGroup> activeGroups(Long courseId) {
+        if (courses.findById(courseId).filter(c -> c.isActive() && c.getEducationLevel().isActive()).isEmpty()) return List.of();
         return groups.findByCourseIdAndActiveTrueOrderByNameAsc(courseId);
     }
 
@@ -61,7 +63,7 @@ public class CatalogService {
         if (maxCourses == null || maxCourses < 1 || maxCourses > 10)
             throw new IllegalArgumentException("Количество курсов должно быть от 1 до 10");
         EducationLevel e = id == null ? new EducationLevel() : levels.findById(id).orElseThrow();
-        e.setName(name.trim());
+        e.setName(checkedName(name, 120));
         e.setMaxCourses(maxCourses);
         e.setSortOrder(sortOrder == null ? 0 : sortOrder);
         e.setActive(active);
@@ -75,7 +77,7 @@ public class CatalogService {
         Course c = id == null ? new Course() : courses.findById(id).orElseThrow();
         c.setEducationLevel(level);
         c.setNumber(number);
-        c.setName(name == null || name.isBlank() ? number + " курс" : name.trim());
+        c.setName(checkedName(name == null || name.isBlank() ? number + " курс" : name, 120));
         c.setActive(active);
         return courses.save(c);
     }
@@ -84,7 +86,7 @@ public class CatalogService {
         Course course = courses.findById(courseId).orElseThrow();
         StudyGroup g = id == null ? new StudyGroup() : groups.findById(id).orElseThrow();
         g.setCourse(course);
-        g.setName(name.trim());
+        g.setName(checkedName(name, 180));
         g.setActive(active);
         return groups.save(g);
     }

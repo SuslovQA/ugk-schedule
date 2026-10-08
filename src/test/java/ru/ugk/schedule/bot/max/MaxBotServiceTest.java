@@ -50,7 +50,7 @@ class MaxBotServiceTest {
                 .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].text").value("Показать расписание"))
                 .andExpect(jsonPath("$.attachments[0].payload.buttons[1][0].payload").value("RESET"))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
-        new MaxBotService(mock(CatalogService.class), prefs, "test-token", builder.build()).poll();
+        new MaxBotService(mock(CatalogService.class), prefs, "test-token", builder.build(), new ru.ugk.schedule.bot.TestInbox()).poll();
         verify(prefs).setGroup(MessengerType.MAX, "7", 4L);
         server.verify();
     }
@@ -85,7 +85,7 @@ class MaxBotServiceTest {
                     .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].payload").value("g4"))
                     .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
         }
-        var bot = new MaxBotService(mock(CatalogService.class), prefs, "test-token", builder.build());
+        var bot = new MaxBotService(mock(CatalogService.class), prefs, "test-token", builder.build(), new ru.ugk.schedule.bot.TestInbox());
         bot.poll();
         bot.poll();
         server.verify();
@@ -109,7 +109,7 @@ class MaxBotServiceTest {
                 .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].text").value("СПО"))
                 .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].payload").value("L:2"))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
-        new MaxBotService(catalog, prefs, "test-token", builder.build()).poll();
+        new MaxBotService(catalog, prefs, "test-token", builder.build(), new ru.ugk.schedule.bot.TestInbox()).poll();
         server.verify();
     }
 
@@ -131,7 +131,7 @@ class MaxBotServiceTest {
         server.expect(requestTo("https://platform-api2.max.ru/messages?user_id=8"))
                 .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].payload").value("L:2"))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
-        new MaxBotService(catalog, prefs, "test-token", builder.build()).poll();
+        new MaxBotService(catalog, prefs, "test-token", builder.build(), new ru.ugk.schedule.bot.TestInbox()).poll();
         server.verify();
     }
 }

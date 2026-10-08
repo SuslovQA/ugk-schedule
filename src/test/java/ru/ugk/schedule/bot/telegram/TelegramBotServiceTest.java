@@ -53,7 +53,7 @@ class TelegramBotServiceTest {
                 .andExpect(jsonPath("$.reply_markup.inline_keyboard[0][0].text").value("Показать расписание"))
                 .andExpect(jsonPath("$.reply_markup.inline_keyboard[1][0].callback_data").value("RESET"))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
-        new TelegramBotService(mock(CatalogService.class), prefs, "test", "https://schedule.ru/app", builder).poll();
+        new TelegramBotService(mock(CatalogService.class), prefs, "test", "https://schedule.ru/app", builder, new ru.ugk.schedule.bot.TestInbox()).poll();
         verify(prefs).setGroup(MessengerType.TELEGRAM, "7", 4L);
         server.verify();
     }
@@ -89,7 +89,7 @@ class TelegramBotServiceTest {
                 .andExpect(jsonPath("$.text").value(org.hamcrest.Matchers.containsString("ещё не опубликовано")))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
         new TelegramBotService(mock(CatalogService.class), prefs, "test",
-                "https://YOUR_HTTPS_DOMAIN/miniapp/schedule", builder).poll();
+                "https://YOUR_HTTPS_DOMAIN/miniapp/schedule", builder, new ru.ugk.schedule.bot.TestInbox()).poll();
         server.verify();
     }
 }

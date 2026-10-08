@@ -30,7 +30,8 @@ public class UserPreferenceService {
     @Transactional(readOnly = true)
     public Optional<Long> selectedGroupId(MessengerType m, String userId) {
         return prefs.findByMessengerAndExternalUserId(m, userId)
-                .map(UserPreference::getGroup).map(StudyGroup::getId);
+                .map(UserPreference::getGroup).filter(g -> g.isActive() && g.getCourse().isActive()
+                        && g.getCourse().getEducationLevel().isActive()).map(StudyGroup::getId);
     }
 
     public UserPreference ensure(MessengerType m, String userId) {
@@ -44,14 +45,14 @@ public class UserPreferenceService {
 
     public void setLevel(MessengerType m, String userId, Long id) {
         UserPreference p = ensure(m, userId);
-        p.setEducationLevel(levels.findById(id).orElseThrow());
+        p.setEducationLevel(levels.findById(id).filter(EducationLevel::isActive).orElseThrow());
         p.setCourse(null);
         p.setGroup(null);
     }
 
     public void setCourse(MessengerType m, String userId, Long id) {
         UserPreference p = ensure(m, userId);
-        Course c = courses.findById(id).orElseThrow();
+        Course c = courses.findById(id).filter(x -> x.isActive() && x.getEducationLevel().isActive()).orElseThrow();
         if (p.getEducationLevel() == null || !c.getEducationLevel().getId().equals(p.getEducationLevel().getId()))
             throw new IllegalArgumentException("Курс не относится к выбранному уровню");
         p.setCourse(c);
@@ -60,7 +61,8 @@ public class UserPreferenceService {
 
     public void setGroup(MessengerType m, String userId, Long id) {
         UserPreference p = ensure(m, userId);
-        StudyGroup g = groups.findById(id).orElseThrow();
+        StudyGroup g = groups.findById(id).filter(x -> x.isActive() && x.getCourse().isActive()
+                && x.getCourse().getEducationLevel().isActive()).orElseThrow();
         if (p.getCourse() == null || !g.getCourse().getId().equals(p.getCourse().getId()))
             throw new IllegalArgumentException("Группа не относится к выбранному курсу");
         p.setGroup(g);

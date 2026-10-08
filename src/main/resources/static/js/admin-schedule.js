@@ -29,7 +29,14 @@ function defaultEndTime(time) {
 }
 
 async function json(url, opts) {
-    const r = await fetch(url, opts);
+    const options = {...opts};
+    if (!['GET', 'HEAD', 'OPTIONS'].includes((options.method || 'GET').toUpperCase())) {
+        const token = document.querySelector('meta[name="_csrf"]')?.content;
+        const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+        if (!token || !header) throw new Error('Сессия истекла. Обновите страницу и войдите заново.');
+        options.headers = {...options.headers, [header]: token};
+    }
+    const r = await fetch(url, options);
     if (!r.ok) throw new Error(await r.text());
     return r.status === 204 ? null : r.json();
 }

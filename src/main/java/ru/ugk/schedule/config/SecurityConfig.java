@@ -20,7 +20,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> a.anyRequest().permitAll())
                 .headers(h -> h.frameOptions(f -> f.disable())
                         .contentSecurityPolicy(c -> c.policyDirectives(
-                                "frame-ancestors 'self' https://max.ru https://*.max.ru https://web.telegram.org https://*.telegram.org")));
+                                "default-src 'self'; script-src 'self' https://st.max.ru; style-src 'self' 'unsafe-inline'; "
+                                + "img-src 'self' data: https://*.max.ru; connect-src 'self' https://*.max.ru; "
+                                + "object-src 'none'; base-uri 'none'; form-action 'self'; "
+                                + "frame-ancestors 'self' https://max.ru https://*.max.ru https://web.telegram.org https://*.telegram.org")));
         return http.build();
     }
 
@@ -39,13 +42,15 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(a -> a
+        http.headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
+                        "default-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")))
+                .authorizeHttpRequests(a -> a
                         .requestMatchers("/css/**", "/js/**", "/miniapp/**", "/api/public/**", "/error").permitAll()
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().permitAll())
+                        .anyRequest().denyAll())
                 .formLogin(f -> f.loginPage("/admin/login").defaultSuccessUrl("/admin/schedule", true).permitAll())
                 .logout(l -> l.logoutUrl("/admin/logout").logoutSuccessUrl("/admin/login?logout"))
-                .csrf(c -> c.ignoringRequestMatchers("/api/**"));
+                .csrf(c -> c.ignoringRequestMatchers("/api/public/telegram/group", "/api/public/max/group"));
         return http.build();
     }
 }

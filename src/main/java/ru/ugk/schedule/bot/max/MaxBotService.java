@@ -16,37 +16,38 @@ import java.util.*;
 public class MaxBotService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MaxBotService.class);
     private final RestClient http;
+    private final ru.ugk.schedule.bot.BotUpdateInbox inbox;
+    private final String stream;
     private final CatalogService catalog;
     private final UserPreferenceService prefs;
     private final String token;
     private BotIdentity botIdentity;
-    private Long marker;
-    private final Map<String, Set<String>> messages = new HashMap<>();
+    private final ru.ugk.schedule.bot.RecentBotMessages<String, String> messages = new ru.ugk.schedule.bot.RecentBotMessages<>();
 
-    public MaxBotService(CatalogService catalog, UserPreferenceService prefs, @Value("${app.max.token:}") String token, @Qualifier("maxRestClient") RestClient http) {
+    public MaxBotService(CatalogService catalog, UserPreferenceService prefs, @Value("${app.max.token:}") String token, @Qualifier("maxRestClient") RestClient http, ru.ugk.schedule.bot.BotUpdateInbox inbox) {
         this.catalog = catalog;
         this.prefs = prefs;
         this.token = token;
         this.http = http;
+        this.inbox = inbox;
+        this.stream = ru.ugk.schedule.bot.BotUpdateInbox.stream("max", token);
     }
 
     @Scheduled(fixedDelayString = "${app.max.poll-delay-ms:2000}")
     public void poll() {
+        messages.expire();
         if (token.isBlank()) return;
         try {
+            inbox.drain(stream, this::handle);
+            Long marker = inbox.cursor(stream);
             String url = "https://platform-api2.max.ru/updates?timeout=1&limit=100" + (marker == null ? "" : "&marker=" + marker);
             JsonNode root = http.get().uri(url).header("Authorization", token).retrieve().body(JsonNode.class);
             if (root == null) return;
-            if (root.hasNonNull("marker")) marker = root.path("marker").asLong();
-            for (JsonNode u : root.path("updates")) {
-                try {
-                    handle(u);
-                } catch (Exception e) {
-                    log.warn("MAX update " + u.path("update_type").asText() + ": " + String.valueOf(e.getMessage()).replace(token, "[REDACTED]"));
-                }
-            }
+            Long next = root.hasNonNull("marker") ? Long.valueOf(root.path("marker").asLong()) : marker;
+            inbox.capture(stream, next, root.path("updates"));
+            inbox.drain(stream, this::handle);
         } catch (Exception e) {
-            log.warn("MAX polling: " + String.valueOf(e.getMessage()).replace(token, "[REDACTED]"));
+            log.warn("MAX polling failed: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -157,7 +158,7 @@ public class MaxBotService {
     }
 
     private void remember(String userId, JsonNode id) {
-        if (!id.asText("").isBlank()) messages.computeIfAbsent(userId, k -> new LinkedHashSet<>()).add(id.asText());
+        if (!id.asText("").isBlank()) messages.remember(userId, id.asText());
     }
 
     private void clearMessages(String userId) {

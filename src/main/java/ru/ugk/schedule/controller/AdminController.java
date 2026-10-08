@@ -37,7 +37,7 @@ public class AdminController {
             catalog.saveLevel(id, name, maxCourses, sortOrder, active);
             ra.addFlashAttribute("message", "Уровень образования сохранён");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", "Не удалось сохранить данные. Проверьте значения и отсутствие дубликатов.");
         }
         return "redirect:/admin";
     }
@@ -59,7 +59,7 @@ public class AdminController {
             catalog.saveCourse(id, levelId, number, name, active);
             ra.addFlashAttribute("message", "Курс сохранён");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", "Не удалось сохранить данные. Проверьте значения и отсутствие дубликатов.");
         }
         return "redirect:/admin";
     }
@@ -82,7 +82,7 @@ public class AdminController {
             var result = catalog.createCourses(levelIds, number, name, active);
             ra.addFlashAttribute("message", "Добавлено курсов: " + result.created() + ". Уже существовали: " + result.skipped());
         } catch (IllegalArgumentException e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", "Не удалось сохранить данные. Проверьте значения и отсутствие дубликатов.");
         }
         return "redirect:/admin";
     }
@@ -94,7 +94,7 @@ public class AdminController {
             var result = catalog.createGroups(courseIds, name, active);
             ra.addFlashAttribute("message", "Добавлено групп: " + result.created() + ". Уже существовали: " + result.skipped());
         } catch (IllegalArgumentException e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", "Не удалось сохранить данные. Проверьте значения и отсутствие дубликатов.");
         }
         return "redirect:/admin";
     }
@@ -106,7 +106,7 @@ public class AdminController {
             catalog.saveGroup(id, courseId, name, active);
             ra.addFlashAttribute("message", "Группа сохранена");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", "Не удалось сохранить данные. Проверьте значения и отсутствие дубликатов.");
         }
         return "redirect:/admin";
     }

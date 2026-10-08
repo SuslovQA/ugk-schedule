@@ -3,13 +3,15 @@
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
     <springProperty name="APP_LOG_DIRECTORY" source="app.logging.directory" defaultValue="./logs"/>
     <springProperty name="APP_LOG_MAX_FILE_SIZE" source="app.logging.max-file-size" defaultValue="10MB"/>
-    <springProperty name="APP_LOG_HISTORY" source="app.logging.history-days" defaultValue="0"/>
+    <springProperty name="APP_LOG_HISTORY" source="app.logging.history-days" defaultValue="30"/>
+    <springProperty name="APP_LOG_TOTAL_SIZE_CAP" source="app.logging.total-size-cap" defaultValue="1GB"/>
     <appender name="DAILY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- Omitting file makes the active file follow the current date and index. -->
+        <file>${APP_LOG_DIRECTORY}/application.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${APP_LOG_DIRECTORY}/%d{yyyy-MM-dd}/application.%i.log.gz</fileNamePattern>
             <maxFileSize>${APP_LOG_MAX_FILE_SIZE}</maxFileSize>
             <maxHistory>${APP_LOG_HISTORY}</maxHistory>
+            <totalSizeCap>${APP_LOG_TOTAL_SIZE_CAP}</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>

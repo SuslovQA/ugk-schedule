@@ -2,6 +2,8 @@
 <html lang="ru" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Расписание</title>
     <link rel="stylesheet" href="/css/app.css">
