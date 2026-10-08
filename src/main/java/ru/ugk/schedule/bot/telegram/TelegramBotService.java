@@ -70,12 +70,21 @@ public class TelegramBotService {
             long chatId = q.path("message").path("chat").path("id").asLong();
             String data = q.path("data").asText();
             answerCallback(q.path("id").asText());
-            remember(chatId, q.path("message").path("message_id"));
+            int messageId = q.path("message").path("message_id").asInt();
+            if (!data.equals("RESET")) deleteMessage(chatId, messageId);
             processCallback(chatId, userId, data);
         }
     }
 
     private void processCallback(long chatId, String userId, String data) {
+        if (data.equals("BACK:LEVELS")) {
+            showLevels(chatId);
+            return;
+        }
+        if (data.startsWith("BACK:COURSES:")) {
+            showCourses(chatId, Long.parseLong(data.substring("BACK:COURSES:".length())));
+            return;
+        }
         if (data.equals("RESET")) {
             prefs.reset(MessengerType.TELEGRAM, userId);
             showLevels(chatId);
@@ -88,7 +97,8 @@ public class TelegramBotService {
         }
         if (data.startsWith("C:")) {
             prefs.setCourse(MessengerType.TELEGRAM, userId, Long.parseLong(data.substring(2)));
-            showGroups(chatId, Long.parseLong(data.substring(2)));
+            long levelId = prefs.find(MessengerType.TELEGRAM, userId).orElseThrow().getEducationLevel().getId();
+            showGroups(chatId, Long.parseLong(data.substring(2)), levelId);
             return;
         }
         if (data.startsWith("G:")) {
@@ -109,11 +119,15 @@ public class TelegramBotService {
     }
 
     private void showCourses(long chatId, Long levelId) {
-        send(chatId, "Выберите курс", callbackRows(catalog.activeCourses(levelId).stream().map(x -> new Btn(x.getName(), "C:" + x.getId())).toList()));
+        List<Btn> buttons = new ArrayList<>(catalog.activeCourses(levelId).stream().map(x -> new Btn(x.getName(), "C:" + x.getId())).toList());
+        buttons.add(new Btn("Назад", "BACK:LEVELS"));
+        send(chatId, "Выберите курс", callbackRows(buttons));
     }
 
-    private void showGroups(long chatId, Long courseId) {
-        send(chatId, "Выберите группу / направление", callbackRows(catalog.activeGroups(courseId).stream().map(x -> new Btn(x.getName(), "G:" + x.getId())).toList()));
+    private void showGroups(long chatId, Long courseId, Long levelId) {
+        List<Btn> buttons = new ArrayList<>(catalog.activeGroups(courseId).stream().map(x -> new Btn(x.getName(), "G:" + x.getId())).toList());
+        buttons.add(new Btn("Назад", "BACK:COURSES:" + levelId));
+        send(chatId, "Выберите группу / направление", callbackRows(buttons));
     }
 
     private void showMenu(long chatId, String userId) {
@@ -161,6 +175,18 @@ public class TelegramBotService {
             } catch (Exception e) {
                 log.warn("Telegram: could not delete setup message " + id);
             }
+        }
+    }
+
+    private void deleteMessage(long chatId, int messageId) {
+        if (messageId <= 0) return;
+        messages.forget(chatId, messageId);
+        try {
+            http.post().uri("https://api.telegram.org/bot" + token + "/deleteMessage")
+                    .contentType(MediaType.APPLICATION_JSON).body(Map.of("chat_id", chatId, "message_id", messageId))
+                    .retrieve().toBodilessEntity();
+        } catch (Exception e) {
+            log.warn("Telegram: could not delete setup message " + messageId);
         }
     }
 

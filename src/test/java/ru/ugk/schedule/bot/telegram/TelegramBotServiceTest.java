@@ -15,13 +15,40 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 class TelegramBotServiceTest {
+    @Test
+    void backFromGroupsDeletesCurrentMessageAndShowsCourses() {
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var catalog = mock(CatalogService.class);
+        var course = new Course(); course.setId(3L); course.setName("1 курс");
+        when(catalog.activeCourses(2L)).thenReturn(java.util.List.of(course));
+        server.expect(requestTo("https://api.telegram.org/bottest/getUpdates?timeout=1&offset=0"))
+                .andRespond(withSuccess("""
+                        {"ok":true,"result":[{"update_id":1,"callback_query":{"id":"back","from":{"id":7},
+                        "message":{"message_id":13,"chat":{"id":7}},"data":"BACK:COURSES:2"}}]}
+                        """, MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://api.telegram.org/bottest/answerCallbackQuery"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://api.telegram.org/bottest/deleteMessage"))
+                .andExpect(jsonPath("$.message_id").value(13))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://api.telegram.org/bottest/sendMessage"))
+                .andExpect(jsonPath("$.text").value("Выберите курс"))
+                .andExpect(jsonPath("$.reply_markup.inline_keyboard[0][0].callback_data").value("C:3"))
+                .andExpect(jsonPath("$.reply_markup.inline_keyboard[1][0].callback_data").value("BACK:LEVELS"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        new TelegramBotService(catalog, mock(UserPreferenceService.class), "test", "", builder,
+                new ru.ugk.schedule.bot.TestInbox()).poll();
+        server.verify();
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void clearsSetupBeforeMenuEvenIfOneDeletionFails(boolean deletionFails) {
         var builder = RestClient.builder();
-        var server = MockRestServiceServer.bindTo(builder).build();
+        var server = MockRestServiceServer.bindTo(builder).ignoreExpectOrder(true).build();
         var prefs = mock(UserPreferenceService.class);
-        var level = new EducationLevel(); level.setName("СПО");
+        var level = new EducationLevel(); level.setId(2L); level.setName("СПО");
         var course = new Course(); course.setName("1 курс");
         var group = new StudyGroup(); group.setId(4L); group.setName("Группа");
         var preference = new UserPreference();
@@ -35,9 +62,17 @@ class TelegramBotServiceTest {
                         {"update_id":3,"callback_query":{"id":"b","from":{"id":7},"message":{"message_id":12,"chat":{"id":7}},"data":"C:3"}},
                         {"update_id":4,"callback_query":{"id":"c","from":{"id":7},"message":{"message_id":13,"chat":{"id":7}},"data":"G:4"}}]}
                         """, MediaType.APPLICATION_JSON));
+        String[] texts = {"Выберите уровень образования", "Выберите курс", "Выберите группу / направление"};
+        String[] backPayloads = {null, "BACK:LEVELS", "BACK:COURSES:2"};
+        for (int index = 0; index < texts.length; index++) {
+            var expectation = server.expect(requestTo("https://api.telegram.org/bottest/sendMessage"))
+                    .andExpect(jsonPath("$.text").value(texts[index]));
+            if (backPayloads[index] != null)
+                expectation.andExpect(jsonPath("$.reply_markup.inline_keyboard[-1][0].text").value("Назад"))
+                        .andExpect(jsonPath("$.reply_markup.inline_keyboard[-1][0].callback_data").value(backPayloads[index]));
+            expectation.andRespond(withSuccess("{\"ok\":true,\"result\":{\"message_id\":" + (index + 11) + "}}", MediaType.APPLICATION_JSON));
+        }
         for (int id = 11; id <= 13; id++) {
-            server.expect(requestTo("https://api.telegram.org/bottest/sendMessage"))
-                    .andRespond(withSuccess("{\"ok\":true,\"result\":{\"message_id\":" + id + "}}", MediaType.APPLICATION_JSON));
             server.expect(requestTo("https://api.telegram.org/bottest/answerCallbackQuery"))
                     .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
         }

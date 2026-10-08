@@ -64,8 +64,9 @@ public class MaxBotService {
                 showCurrentOrLevels(userId);
         } else if ("message_callback".equals(type)) {
             String userId = firstText(u.path("user").path("user_id"), u.path("callback").path("user").path("user_id"));
-            remember(userId, u.path("message").path("body").path("mid"));
+            String messageId = u.path("message").path("body").path("mid").asText("");
             String payload = u.path("callback").path("payload").asText();
+            if (!payload.equals("RESET")) deleteMessage(userId, messageId);
             processCallback(userId, payload);
         }
     }
@@ -77,6 +78,14 @@ public class MaxBotService {
     }
 
     private void processCallback(String userId, String data) {
+        if (data.equals("BACK:LEVELS")) {
+            showLevels(userId);
+            return;
+        }
+        if (data.startsWith("BACK:COURSES:")) {
+            showCourses(userId, Long.parseLong(data.substring("BACK:COURSES:".length())));
+            return;
+        }
         if (data.equals("RESET")) {
             prefs.reset(MessengerType.MAX, userId);
             showLevels(userId);
@@ -91,7 +100,8 @@ public class MaxBotService {
         if (data.startsWith("C:")) {
             long id = Long.parseLong(data.substring(2));
             prefs.setCourse(MessengerType.MAX, userId, id);
-            showGroups(userId, id);
+            long levelId = prefs.find(MessengerType.MAX, userId).orElseThrow().getEducationLevel().getId();
+            showGroups(userId, id, levelId);
             return;
         }
         if (data.startsWith("G:")) {
@@ -112,11 +122,15 @@ public class MaxBotService {
     }
 
     private void showCourses(String userId, Long levelId) {
-        send(userId, "Выберите курс", buttons(catalog.activeCourses(levelId).stream().map(x -> new Btn(x.getName(), "C:" + x.getId())).toList()));
+        List<Btn> items = new ArrayList<>(catalog.activeCourses(levelId).stream().map(x -> new Btn(x.getName(), "C:" + x.getId())).toList());
+        items.add(new Btn("Назад", "BACK:LEVELS"));
+        send(userId, "Выберите курс", buttons(items));
     }
 
-    private void showGroups(String userId, Long courseId) {
-        send(userId, "Выберите группу / направление", buttons(catalog.activeGroups(courseId).stream().map(x -> new Btn(x.getName(), "G:" + x.getId())).toList()));
+    private void showGroups(String userId, Long courseId, Long levelId) {
+        List<Btn> items = new ArrayList<>(catalog.activeGroups(courseId).stream().map(x -> new Btn(x.getName(), "G:" + x.getId())).toList());
+        items.add(new Btn("Назад", "BACK:COURSES:" + levelId));
+        send(userId, "Выберите группу / направление", buttons(items));
     }
 
     private void showMenu(String userId) {
@@ -182,6 +196,17 @@ public class MaxBotService {
             } catch (Exception e) {
                 log.warn("MAX: could not delete setup message " + id);
             }
+        }
+    }
+
+    private void deleteMessage(String userId, String messageId) {
+        if (messageId.isBlank()) return;
+        messages.forget(userId, messageId);
+        try {
+            http.delete().uri("https://platform-api2.max.ru/messages?message_id={id}", messageId)
+                    .header("Authorization", token).retrieve().toBodilessEntity();
+        } catch (Exception e) {
+            log.warn("MAX: could not delete setup message " + messageId);
         }
     }
 }

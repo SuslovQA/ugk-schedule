@@ -19,4 +19,9 @@ class RecentBotMessagesTest {
         org.mockito.Mockito.when(clock.millis()).thenReturn(1000L);
         history.expire();assertThat(history.remove("a")).isEmpty();
     }
+    @Test void forgetsOnlySelectedMessage() {
+        var history=new RecentBotMessages<String,Integer>();
+        history.remember("a",1);history.remember("a",2);history.forget("a",2);
+        assertThat(history.remove("a")).containsExactly(1);
+    }
 }

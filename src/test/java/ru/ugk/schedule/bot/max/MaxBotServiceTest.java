@@ -12,13 +12,38 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 class MaxBotServiceTest {
+    @Test
+    void backFromGroupsDeletesCurrentMessageAndShowsCourses() {
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var catalog = mock(CatalogService.class);
+        var course = new Course(); course.setId(3L); course.setName("1 курс");
+        when(catalog.activeCourses(2L)).thenReturn(java.util.List.of(course));
+        server.expect(requestTo("https://platform-api2.max.ru/updates?timeout=1&limit=100"))
+                .andRespond(withSuccess("""
+                        {"updates":[{"update_type":"message_callback","callback":{"user":{"user_id":7},
+                        "payload":"BACK:COURSES:2"},"message":{"body":{"mid":"m3"}}}]}
+                        """, MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://platform-api2.max.ru/messages?message_id=m3"))
+                .andExpect(method(org.springframework.http.HttpMethod.DELETE))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://platform-api2.max.ru/messages?user_id=7"))
+                .andExpect(jsonPath("$.text").value("Выберите курс"))
+                .andExpect(jsonPath("$.attachments[0].payload.buttons[0][0].payload").value("C:3"))
+                .andExpect(jsonPath("$.attachments[0].payload.buttons[1][0].payload").value("BACK:LEVELS"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        new MaxBotService(catalog, mock(UserPreferenceService.class), "test-token", builder.build(),
+                new ru.ugk.schedule.bot.TestInbox()).poll();
+        server.verify();
+    }
+
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
     void clearsSetupBeforeMenuEvenIfOneDeletionFails(boolean deletionFails) {
         var builder = RestClient.builder();
-        var server = MockRestServiceServer.bindTo(builder).build();
+        var server = MockRestServiceServer.bindTo(builder).ignoreExpectOrder(true).build();
         var prefs = mock(UserPreferenceService.class);
-        var level = new EducationLevel(); level.setName("СПО");
+        var level = new EducationLevel(); level.setId(2L); level.setName("СПО");
         var course = new Course(); course.setName("1 курс");
         var group = new StudyGroup(); group.setId(4L); group.setName("Группа");
         var preference = new UserPreference();
@@ -32,9 +57,15 @@ class MaxBotServiceTest {
                         {"update_type":"message_callback","callback":{"user":{"user_id":7},"payload":"C:3"},"message":{"body":{"mid":"m2"}}},
                         {"update_type":"message_callback","callback":{"user":{"user_id":7},"payload":"G:4"},"message":{"body":{"mid":"m3"}}}]}
                         """, MediaType.APPLICATION_JSON));
-        for (int id = 1; id <= 3; id++) {
-            server.expect(requestTo("https://platform-api2.max.ru/messages?user_id=7"))
-                    .andRespond(withSuccess("{\"message\":{\"body\":{\"mid\":\"m" + id + "\"}}}", MediaType.APPLICATION_JSON));
+        String[] texts = {"Выберите уровень образования", "Выберите курс", "Выберите группу / направление"};
+        String[] backPayloads = {null, "BACK:LEVELS", "BACK:COURSES:2"};
+        for (int index = 0; index < texts.length; index++) {
+            var expectation = server.expect(requestTo("https://platform-api2.max.ru/messages?user_id=7"))
+                    .andExpect(jsonPath("$.text").value(texts[index]));
+            if (backPayloads[index] != null)
+                expectation.andExpect(jsonPath("$.attachments[0].payload.buttons[-1][0].text").value("Назад"))
+                        .andExpect(jsonPath("$.attachments[0].payload.buttons[-1][0].payload").value(backPayloads[index]));
+            expectation.andRespond(withSuccess("{\"message\":{\"body\":{\"mid\":\"m" + (index + 1) + "\"}}}", MediaType.APPLICATION_JSON));
         }
         for (int id = 1; id <= 3; id++) {
             server.expect(requestTo("https://platform-api2.max.ru/messages?message_id=m" + id))

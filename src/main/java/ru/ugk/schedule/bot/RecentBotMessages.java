@@ -31,6 +31,12 @@ public final class RecentBotMessages<K, V> {
         expire(); History<V> history=histories.remove(user);
         return history == null ? Set.of() : new LinkedHashSet<>(history.ids());
     }
+    public synchronized void forget(K user,V id) {
+        expire(); History<V> history=histories.get(user);
+        if (history == null) return;
+        history.ids().remove(id);
+        if (history.ids().isEmpty()) histories.remove(user);
+    }
     public synchronized void expire() {
         long cutoff=clock.millis()-ttlMillis;
         histories.entrySet().removeIf(e -> e.getValue().updated() <= cutoff);
