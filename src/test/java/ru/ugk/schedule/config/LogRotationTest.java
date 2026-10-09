@@ -36,11 +36,12 @@ class LogRotationTest {
             configurator.doConfigure(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
             context.getLogger("ROOT").detachAppender("CONSOLE");
             for (int i = 0; i < 100; i++) context.getLogger("rotation-test").info("event-{} {}", i, "Ж".repeat(100));
+            var executor = context.getExecutorService();
+            executor.shutdown();
+            assertThat(executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
         } finally {
             context.stop();
         }
-        // Multiple compression tasks can finish after the last rollover future.
-        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(5)).untilAsserted(() -> {
         try (var paths = Files.walk(directory)) {
             var files = paths.filter(Files::isRegularFile).toList();
             assertThat(files).anyMatch(p -> p.toString().endsWith(".gz"));
@@ -59,6 +60,5 @@ class LogRotationTest {
             assertThat(content.toString().lines().count()).isEqualTo(100);
             for (int i = 0; i < 100; i++) assertThat(content.toString()).contains("event-" + i + " ");
         }
-        });
     }
 }

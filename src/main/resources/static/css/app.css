@@ -507,22 +507,15 @@ dialog label {
         min-width: 0;
     }
 
-    .admin-page .schedule-wrap {
-        margin-inline: -20px;
-        padding-inline: 20px;
-        scroll-snap-type: x mandatory;
-    }
-
     .admin-page .schedule-grid {
         display: none;
     }
 
     .admin-page .schedule-mobile {
         display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(280px, calc(100vw - 40px));
+        grid-template-columns: minmax(0, 1fr);
         gap: 12px;
-        width: max-content;
+        width: 100%;
         padding-bottom: 8px;
     }
 
@@ -531,7 +524,6 @@ dialog label {
         background: #fff;
         border: 1px solid #e0e4eb;
         border-radius: 12px;
-        scroll-snap-align: start;
     }
 
     .admin-page .schedule-day h2 {
