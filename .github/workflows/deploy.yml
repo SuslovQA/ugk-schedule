@@ -88,8 +88,16 @@ jobs:
           opts=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 -o ServerAliveInterval=10 -o ServerAliveCountMax=3)
           jars=(artifact/*.jar)
           test "${#jars[@]}" -eq 1
-          scp "${opts[@]}" -P "$port" "${jars[0]}" "$VPS_USER@$VPS_HOST:/opt/ugk-schedule/app.jar.next"
-          ssh "${opts[@]}" -p "$port" "$VPS_USER@$VPS_HOST" 'bash -se' < deploy/deploy.sh
+          echo 'Uploading application artifact...'
+          if ! timeout --foreground 120s scp "${opts[@]}" -P "$port" "${jars[0]}" "$VPS_USER@$VPS_HOST:/opt/ugk-schedule/app.jar.next"; then
+            echo 'Artifact upload failed or exceeded 120 seconds.' >&2
+            exit 1
+          fi
+          echo 'Upload complete. Restarting application...'
+          if ! timeout --foreground 180s ssh "${opts[@]}" -p "$port" "$VPS_USER@$VPS_HOST" 'bash -se' < deploy/deploy.sh; then
+            echo 'Remote restart failed or exceeded 180 seconds.' >&2
+            exit 1
+          fi
       - name: Remove SSH credentials
         if: always()
         run: rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts
