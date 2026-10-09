@@ -120,6 +120,10 @@ th, td {
     min-width: 1100px
 }
 
+.schedule-mobile {
+    display: none
+}
+
 .schedule-grid th:first-child {
     width: 85px
 }
@@ -501,6 +505,56 @@ dialog label {
     .admin-page .filters > * {
         width: 100%;
         min-width: 0;
+    }
+
+    .admin-page .schedule-wrap {
+        margin-inline: -20px;
+        padding-inline: 20px;
+        scroll-snap-type: x mandatory;
+    }
+
+    .admin-page .schedule-grid {
+        display: none;
+    }
+
+    .admin-page .schedule-mobile {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(280px, calc(100vw - 40px));
+        gap: 12px;
+        width: max-content;
+        padding-bottom: 8px;
+    }
+
+    .admin-page .schedule-day {
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #e0e4eb;
+        border-radius: 12px;
+        scroll-snap-align: start;
+    }
+
+    .admin-page .schedule-day h2 {
+        margin: 0;
+        padding: 14px;
+        background: #eef2ff;
+        font-size: 1.1rem;
+    }
+
+    .admin-page .schedule-slot {
+        min-height: 96px;
+        max-width: none;
+        border: 0;
+        border-top: 1px solid #e0e4eb;
+        padding: 10px;
+    }
+
+    .admin-page .schedule-slot time {
+        display: block;
+        margin-bottom: 8px;
+        color: #5d6578;
+        font-size: 0.85rem;
+        font-weight: 600;
     }
 
     .admin-page dialog {

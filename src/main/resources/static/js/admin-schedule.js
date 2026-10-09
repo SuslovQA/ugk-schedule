@@ -71,12 +71,28 @@ function render() {
         }
         h += '</tr>';
     }
-    wrap.innerHTML = h + '</tbody></table>';
-    wrap.querySelectorAll('.schedule-cell').forEach(td => td.addEventListener('click', e => {
-        const b = e.target.closest('.entry');
-        openEntry(td.dataset.day, td.dataset.time, b ? Number(b.dataset.id) : null);
-    }));
+    h += '</tbody></table>';
+    h += '<div class="schedule-mobile">' + days.map(([key, name]) => `
+        <section class="schedule-day">
+            <h2>${name}</h2>
+            ${allTimes.map(time => {
+                const list = entries.filter(entry => entry.dayOfWeek === key && entry.startTime.startsWith(time));
+                return `<div class="schedule-slot schedule-cell" data-day="${key}" data-time="${time}">
+                    <time>${timeLabel(time)}</time>
+                    ${list.map(entry => `<button class="entry" data-id="${entry.id}"><b>${esc(entry.subject)}</b><span>${esc(entry.room || '')} ${esc(entry.teacherName || '')}</span></button>`).join('')}
+                    <button class="add-entry" aria-label="Добавить занятие">＋</button>
+                </div>`;
+            }).join('')}
+        </section>`).join('') + '</div>';
+    wrap.innerHTML = h;
 }
+
+wrap.addEventListener('click', event => {
+    const cell = event.target.closest('.schedule-cell');
+    if (!cell || !wrap.contains(cell)) return;
+    const entry = event.target.closest('.entry');
+    openEntry(cell.dataset.day, cell.dataset.time, entry ? Number(entry.dataset.id) : null);
+});
 
 function openEntry(day, time, id) {
     const e = id ? entries.find(x => x.id === id) : null;
