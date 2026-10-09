@@ -85,7 +85,7 @@ jobs:
           : "${VPS_HOST:?Set VPS_HOST}"
           : "${VPS_USER:?Set VPS_USER}"
           port="${VPS_PORT:-22}"
-          opts=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15)
+          opts=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 -o ServerAliveInterval=10 -o ServerAliveCountMax=3)
           jars=(artifact/*.jar)
           test "${#jars[@]}" -eq 1
           scp "${opts[@]}" -P "$port" "${jars[0]}" "$VPS_USER@$VPS_HOST:/opt/ugk-schedule/app.jar.next"
