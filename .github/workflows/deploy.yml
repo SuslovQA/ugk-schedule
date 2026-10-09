@@ -51,7 +51,7 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-24.04
     environment: production
-    timeout-minutes: 15
+    timeout-minutes: 20
     concurrency:
       group: production
       cancel-in-progress: false
@@ -88,9 +88,9 @@ jobs:
           opts=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 -o ServerAliveInterval=10 -o ServerAliveCountMax=3)
           jars=(artifact/*.jar)
           test "${#jars[@]}" -eq 1
-          echo 'Uploading application artifact...'
-          if ! timeout --foreground 120s scp "${opts[@]}" -P "$port" "${jars[0]}" "$VPS_USER@$VPS_HOST:/opt/ugk-schedule/app.jar.next"; then
-            echo 'Artifact upload failed or exceeded 120 seconds.' >&2
+          echo "Uploading application artifact ($(du -h "${jars[0]}" | cut -f1))..."
+          if ! timeout --foreground 600s scp "${opts[@]}" -P "$port" "${jars[0]}" "$VPS_USER@$VPS_HOST:/opt/ugk-schedule/app.jar.next"; then
+            echo 'Artifact upload failed or exceeded 600 seconds.' >&2
             exit 1
           fi
           echo 'Upload complete. Restarting application...'
